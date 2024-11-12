@@ -32,9 +32,6 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main Page'),
-      ),
       body: _pages[_selectedIndex], // 선택된 페이지를 표시
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.only(

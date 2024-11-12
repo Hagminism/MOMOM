@@ -1,11 +1,77 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:newflutter/category_page.dart';
 import 'package:newflutter/main_page.dart';
 import 'package:newflutter/register_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final FirebaseAuth auth = FirebaseAuth.instance; // Firebase 인증(Authentication) 객체
+  final FirebaseFirestore firestore = FirebaseFirestore.instance; // Firebase Firestore 객체
+  late User? user; // 사용자 및 인증에 관련된 정보가 포함된 User 객체 late로 선언
+
+  // controller 객체. 위젯의 속성으로 추가해서 네이티브에서의 id처럼 사용 가능하다.
+  // 가령, 이메일 텍스트 필드의 텍스트를 가져오고 싶다면 email.text로 가져올 수 있음.
+  TextEditingController email = TextEditingController();
+  TextEditingController password = TextEditingController();
+
+  // 로그인 로직
+  void logIn() async {
+    try {
+      // signInWithEmailAndPassword 함수는 성공시 UserCredential 객체를 반환.
+      // UserCredential 객체 내에는 사용자 및 인증에 관련된 정보가 포함됨.
+      final credential = await auth.signInWithEmailAndPassword(email: email.text, password: password.text);
+      user = credential.user;
+      if(user != null) {
+        // ScaffoldMessenger.of(context)
+        //     .showSnackBar(SnackBar(content: Text("안녕하세요, ${user.email}님!")));
+
+        // 메인 페이지로 이동하면서 백스택 제거
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainPage(),
+          ),(route) => false,
+        );
+
+        // 로그인에 성공했다는 내용의 Toast 생성
+        loginSuccessedToast();
+      }
+    } on FirebaseException catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(
+            backgroundColor: Colors.red,
+            content: Container(
+                height: 40.0,
+                child: Text(e.message!))));
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // 로그인을 성공했을 때 띄울 Toast 함수
+  void loginSuccessedToast() {
+    Fluttertoast.showToast(
+      msg: '${user?.email}님 환영합니다!',
+      gravity: ToastGravity.BOTTOM,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
+  // void loginFailedToast() {
+  //   Fluttertoast.showToast(
+  //     msg: '${user?.email}님 환영합니다!',
+  //     gravity: ToastGravity.BOTTOM,
+  //     toastLength: Toast.LENGTH_SHORT,
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +124,7 @@ class LoginPage extends StatelessWidget {
                       width: 250,
                       height: 40,
                       child: TextField(
+                        controller: email,
                         decoration: InputDecoration(
                           hintText: '이메일 주소',
                           hintStyle: TextStyle(color: Color(0x80000000)),
@@ -76,6 +143,7 @@ class LoginPage extends StatelessWidget {
                       width: 250,
                       height: 40,
                       child: TextField(
+                        controller: password,
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: '비밀번호',
@@ -94,13 +162,7 @@ class LoginPage extends StatelessWidget {
                     Builder(
                         builder: (context) {
                           return ElevatedButton(
-                            onPressed: () {
-                              // 로그인 성공 시 메인 페이지로 이동
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => MainPage()),
-                              );
-                            },
+                            onPressed: logIn,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               minimumSize: Size(250, 40),
