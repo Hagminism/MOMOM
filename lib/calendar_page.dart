@@ -31,30 +31,6 @@ class _CalendarPageState extends State<CalendarPage> {
           });
         },
       ),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.calendar_month)
-            ),
-            IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.calculate)
-            ),
-            IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.category)
-            ),
-            IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.person)
-            ),
-          ]
-        ),
-      ),
     );
   }
 }

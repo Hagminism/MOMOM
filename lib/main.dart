@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:newflutter/category_page.dart';
+import 'package:newflutter/main_page.dart';
 import 'login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 

@@ -205,19 +205,6 @@ class _AnalysisPageState extends State<AnalysisPage> {
               ),
             ],
           ),
-          BottomNavigationBar(
-            currentIndex: selectedIndex,
-            onTap: (index) => setState(() => selectedIndex = index),
-            selectedItemColor: Colors.black,
-            unselectedItemColor: Colors.black,
-            backgroundColor: Colors.black,
-            items: [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-              BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '통계'),
-              BottomNavigationBarItem(icon: Icon(Icons.category), label: '카테고리'),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: '마이페이지'),
-            ],
-          ),
         ],
       ),
     );
