@@ -23,6 +23,10 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 화면 크기 가져오기
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 400; // 작은 화면 기준
+
     // 현재 데이터 및 레이블 선택
     List<double> currentData;
     List<String> currentLabels;
@@ -39,20 +43,17 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '10월 소비·수입',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 30,
-            ),
+        title: Text(
+          '10월 소비·수입',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: isSmallScreen ? 24 : 30, // 화면 크기에 따라 조정
           ),
         ),
         centerTitle: false,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -64,9 +65,12 @@ class _AnalysisPageState extends State<AnalysisPage> {
                   ? '주별 소비 분석입니다.'
                   : '일별 소비 분석입니다.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: isSmallScreen ? 16 : 20),
             // 라인 차트
             Expanded(
               flex: 2,
@@ -88,7 +92,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
                         }
                         return '';
                       },
-                      reservedSize: 28,
+                      reservedSize: isSmallScreen ? 22 : 28,
                     ),
                   ),
                   lineBarsData: [
@@ -99,7 +103,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
                       ),
                       isCurved: true,
                       colors: [Colors.red],
-                      barWidth: 4,
+                      barWidth: 3,
                       belowBarData: BarAreaData(show: false),
                       dotData: FlDotData(show: true),
                     ),
@@ -107,7 +111,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: isSmallScreen ? 16 : 20),
             // 막대 차트
             Expanded(
               flex: 3,
@@ -129,7 +133,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
                         }
                         return '';
                       },
-                      reservedSize: 28,
+                      reservedSize: isSmallScreen ? 22 : 28,
                     ),
                   ),
                   barGroups: List.generate(
@@ -140,7 +144,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
                         BarChartRodData(
                           y: currentData[index],
                           colors: [Colors.lightBlue],
-                          width: 20,
+                          width: 18,
                           borderRadius: BorderRadius.zero,
                         ),
                       ],
@@ -152,51 +156,49 @@ class _AnalysisPageState extends State<AnalysisPage> {
           ],
         ),
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: () => setState(() => tabIndex = 0),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                ),
-                child: Text(
-                  '월별',
-                  style: TextStyle(
-                    color: tabIndex == 0 ? Colors.white : Colors.white54,
-                  ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: () => setState(() => tabIndex = 0),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+              ),
+              child: Text(
+                '월별',
+                style: TextStyle(
+                  color: tabIndex == 0 ? Colors.white : Colors.white54,
                 ),
               ),
-              ElevatedButton(
-                onPressed: () => setState(() => tabIndex = 1),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                ),
-                child: Text(
-                  '주별',
-                  style: TextStyle(
-                    color: tabIndex == 1 ? Colors.white : Colors.white54,
-                  ),
+            ),
+            ElevatedButton(
+              onPressed: () => setState(() => tabIndex = 1),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+              ),
+              child: Text(
+                '주별',
+                style: TextStyle(
+                  color: tabIndex == 1 ? Colors.white : Colors.white54,
                 ),
               ),
-              ElevatedButton(
-                onPressed: () => setState(() => tabIndex = 2),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                ),
-                child: Text(
-                  '일별',
-                  style: TextStyle(
-                    color: tabIndex == 2 ? Colors.white : Colors.white54,
-                  ),
+            ),
+            ElevatedButton(
+              onPressed: () => setState(() => tabIndex = 2),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+              ),
+              child: Text(
+                '일별',
+                style: TextStyle(
+                  color: tabIndex == 2 ? Colors.white : Colors.white54,
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
