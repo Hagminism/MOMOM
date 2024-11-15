@@ -9,13 +9,34 @@ class AnalysisPage extends StatefulWidget {
 }
 
 class _AnalysisPageState extends State<AnalysisPage> {
-  int selectedIndex = 0;
   int tabIndex = 0;
 
-  final List<double> barValues = [15, 35, 30, 28, 11, 29, 28]; // 막대 차트 데이터 값
+  // 샘플 데이터: 월별, 주별, 일별 데이터
+  final List<double> monthlyData = [15, 35, 30, 28, 11, 29, 28]; // 월별 데이터
+  final List<double> weeklyData = [10, 20, 15, 25, 12]; // 주별 데이터
+  final List<double> dailyData = [5, 10, 15, 20, 15, 10, 5]; // 일별 데이터
+
+  // X축 레이블
+  final List<String> monthlyLabels = ['4월', '5월', '6월', '7월', '8월', '9월', '10월'];
+  final List<String> weeklyLabels = ['1주차', '2주차', '3주차', '4주차', '5주차'];
+  final List<String> dailyLabels = ['월', '화', '수', '목', '금', '토', '일'];
 
   @override
   Widget build(BuildContext context) {
+    // 현재 데이터 및 레이블 선택
+    List<double> currentData;
+    List<String> currentLabels;
+    if (tabIndex == 0) {
+      currentData = monthlyData;
+      currentLabels = monthlyLabels;
+    } else if (tabIndex == 1) {
+      currentData = weeklyData;
+      currentLabels = weeklyLabels;
+    } else {
+      currentData = dailyData;
+      currentLabels = dailyLabels;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Align(
@@ -24,27 +45,31 @@ class _AnalysisPageState extends State<AnalysisPage> {
             '10월 소비·수입',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 30, // 폰트 크기를 조절할 수 있습니다
+              fontSize: 30,
             ),
           ),
         ),
         centerTitle: false,
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 텍스트
             Text(
-              '지난달보다 자산이 5만원 줄었어요ㅠㅠ',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500), // 폰트 크기를 키우고 약간의 굵기를 추가
+              tabIndex == 0
+                  ? '지난달보다 자산이 5만원 줄었어요ㅠㅠ'
+                  : tabIndex == 1
+                  ? '주별 소비 분석입니다.'
+                  : '일별 소비 분석입니다.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
-
             SizedBox(height: 20),
             // 라인 차트
-            Container(
-              height: 200,
+            Expanded(
+              flex: 2,
               child: LineChart(
                 LineChartData(
                   gridData: FlGridData(show: false),
@@ -57,39 +82,21 @@ class _AnalysisPageState extends State<AnalysisPage> {
                       showTitles: true,
                       interval: 1,
                       getTitles: (double value) {
-                        switch (value.toInt()) {
-                          case 4:
-                            return '4월';
-                          case 5:
-                            return '5월';
-                          case 6:
-                            return '6월';
-                          case 7:
-                            return '7월';
-                          case 8:
-                            return '8월';
-                          case 9:
-                            return '9월';
-                          case 10:
-                            return '10월';
-                          default:
-                            return '';
+                        int index = value.toInt();
+                        if (index >= 0 && index < currentLabels.length) {
+                          return currentLabels[index];
                         }
+                        return '';
                       },
                       reservedSize: 28,
                     ),
                   ),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: [
-                        FlSpot(4, 15),
-                        FlSpot(5, 35),
-                        FlSpot(6, 30),
-                        FlSpot(7, 28),
-                        FlSpot(8, 11),
-                        FlSpot(9, 29),
-                        FlSpot(10, 28),
-                      ],
+                      spots: List.generate(
+                        currentData.length,
+                            (index) => FlSpot(index.toDouble(), currentData[index]),
+                      ),
                       isCurved: true,
                       colors: [Colors.red],
                       barWidth: 4,
@@ -100,11 +107,10 @@ class _AnalysisPageState extends State<AnalysisPage> {
                 ),
               ),
             ),
-            SizedBox(height: 40), // 두 그래프 사이에 여백 추가
+            SizedBox(height: 20),
             // 막대 차트
-            Spacer(),
-            Container(
-              height: 300, // 막대 차트의 높이를 더 크게 설정
+            Expanded(
+              flex: 3,
               child: BarChart(
                 BarChartData(
                   gridData: FlGridData(show: false),
@@ -117,47 +123,32 @@ class _AnalysisPageState extends State<AnalysisPage> {
                       showTitles: true,
                       interval: 1,
                       getTitles: (double value) {
-                        switch (value.toInt()) {
-                          case 4:
-                            return '4월';
-                          case 5:
-                            return '5월';
-                          case 6:
-                            return '6월';
-                          case 7:
-                            return '7월';
-                          case 8:
-                            return '8월';
-                          case 9:
-                            return '9월';
-                          case 10:
-                            return '10월';
-                          default:
-                            return '';
+                        int index = value.toInt();
+                        if (index >= 0 && index < currentLabels.length) {
+                          return currentLabels[index];
                         }
+                        return '';
                       },
                       reservedSize: 28,
                     ),
                   ),
-                  barGroups: barValues
-                      .asMap()
-                      .entries
-                      .map((entry) => BarChartGroupData(
-                    x: entry.key + 4,
-                    barRods: [
-                      BarChartRodData(
-                        y: entry.value,
-                        colors: [Colors.lightBlue],
-                        width: 20,
-                        borderRadius: BorderRadius.zero, // 막대를 네모난 형태로 설정
-                      ),
-                    ],
-                  ))
-                      .toList(),
+                  barGroups: List.generate(
+                    currentData.length,
+                        (index) => BarChartGroupData(
+                      x: index,
+                      barRods: [
+                        BarChartRodData(
+                          y: currentData[index],
+                          colors: [Colors.lightBlue],
+                          width: 20,
+                          borderRadius: BorderRadius.zero,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-            Spacer(flex: 2), // 막대 차트 아래에 더 많은 여백 추가
           ],
         ),
       ),
