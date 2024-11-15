@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'login_page.dart';
+
+// Firebase 인증(Authentication) 객체
+// late 선언하면 로그아웃 -> 재로그인 -> 다시 로그아웃시,
+// auth 객체가 이미 존재하는 상태에서 late 상태로 선언을 한 번 더 하게 되면서 중복이 발생.
+final FirebaseAuth auth = FirebaseAuth.instance;
 
 class MyPageScreen extends StatelessWidget {
   @override
@@ -75,7 +83,7 @@ class MyPageScreen extends StatelessWidget {
                         showDeleteAccountDialog(context);
                       },
                     ),
-                    MenuItem(text: "로그아웃", onTap: () {}),
+                    MenuItem(text: "로그아웃", onTap: () { showSignOutDialog(context); }),
                   ],
                 ),
               ),
@@ -235,5 +243,56 @@ void showDeleteAccountDialog(BuildContext context) {
         ],
       );
     },
+  );
+}
+
+void showSignOutDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("로그아웃"),
+        content: Text("정말로 로그아웃 하시겠습니까?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text("취소"),
+          ),
+          TextButton(
+            onPressed: () {
+              signOut(context);
+
+              },
+            child: Text("확인"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void signOut(BuildContext context) {
+  auth.signOut(); // 로그아웃 진행
+
+  // 메인 페이지로 이동하면서 백스택 제거
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (context) => LoginPage(),
+    ),(route) => false,
+  );
+
+  // 로그아웃 되었다는 내용의 Toast 생성
+  signOutToast();
+}
+
+// 로그아웃시 띄울 Toast 함수
+void signOutToast() {
+  Fluttertoast.showToast(
+    msg: '로그아웃되었습니다.',
+    gravity: ToastGravity.BOTTOM,
+    toastLength: Toast.LENGTH_SHORT,
   );
 }

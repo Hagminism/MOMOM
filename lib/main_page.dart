@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:newflutter/calendar_page.dart';
+import 'calendar_page.dart';
+import 'mypage_page.dart';
 import 'analysis_page.dart';
 import 'category_page.dart';
-import 'register_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -19,7 +19,7 @@ class _MainPageState extends State<MainPage> {
     CalendarPage(),
     AnalysisPage(),
     CategoryPage(),
-    RegisterPage(), // 추가된 페이지
+    MyPageScreen(), // 추가된 페이지
   ];
 
   // 네비게이션 아이템 클릭 시 호출
