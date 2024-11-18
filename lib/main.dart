@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:newflutter/categoryDetail_page.dart';
 import 'package:newflutter/category_page.dart';
 import 'package:newflutter/main_page.dart';
 import 'login_page.dart';
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/', // 앱 시작 시 로그인 페이지로 이동
       routes: {
-        '/': (context) => LoginPage(),  // 로그인 페이지
+        '/': (context) => CategoryDetailPage(),  // 로그인 페이지
         //'/main': (context) => MainPage(),  // 로그인 후 메인 페이지로 이동
         //'/category': (context) => CategoryPage(),  // 카테고리 페이지
       },
