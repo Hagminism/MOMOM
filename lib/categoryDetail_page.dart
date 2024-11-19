@@ -61,7 +61,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               children: [
                 Text(
                   financeInfo.price,
-                  style: const TextStyle(fontSize: 20, color: Colors.white),
+                  style: const TextStyle(fontSize: 20, color: Colors.black), // 수정: 흰색 배경에서 검은색 텍스트
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -87,7 +87,8 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         break;
     }
 
-    return Padding(
+    return Container( // 수정: Container로 감싸서 배경색 지정
+      color: Colors.white24, // 배경색을 흰색으로 설정
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +96,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           Text(
             title,
             style: const TextStyle(
-                fontSize: 15, color: Colors.grey, fontWeight: FontWeight.bold),
+                fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           ...List.generate(list.length, (index) => _accountItem(blockType, list[index])),
@@ -112,11 +113,11 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     int totalCount = todayList.length + yesterdayList.length;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white, // 전체 배경을 흰색으로 설정
       appBar: AppBar(
         title: const Text('소비 카테고리'),
-        backgroundColor: Colors.black,
-        elevation: 0,
+        backgroundColor: Colors.white, // AppBar 배경도 흰색으로 설정
+        elevation: 0, // 그림자 제거
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -134,12 +135,12 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                       children: [
                         const Text(
                           '2024년 10월 교통·자동차 총 금액',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                          style: TextStyle(fontSize: 16, color: Colors.black),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '$totalAmount 원',
-                          style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 32, color: Colors.black, fontWeight: FontWeight.bold), // 총 금액 텍스트 색상 수정
                         ),
                         const SizedBox(height: 4),
                         Container(
