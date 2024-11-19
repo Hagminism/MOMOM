@@ -235,8 +235,7 @@ void showDeleteAccountDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () {
-              // 여기서 회원 탈퇴 로직 추가
-              Navigator.of(context).pop();
+              deleteUser(context);
             },
             child: Text("확인"),
           ),
@@ -263,7 +262,6 @@ void showSignOutDialog(BuildContext context) {
           TextButton(
             onPressed: () {
               signOut(context);
-
               },
             child: Text("확인"),
           ),
@@ -292,6 +290,29 @@ void signOut(BuildContext context) {
 void signOutToast() {
   Fluttertoast.showToast(
     msg: '로그아웃되었습니다.',
+    gravity: ToastGravity.BOTTOM,
+    toastLength: Toast.LENGTH_SHORT,
+  );
+}
+
+void deleteUser(BuildContext context) {
+  auth.currentUser?.delete(); // 로그아웃 진행
+
+  // 메인 페이지로 이동하면서 백스택 제거
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (context) => LoginPage(),
+    ),(route) => false,
+  );
+
+  // 로그아웃 되었다는 내용의 Toast 생성
+  deleteUserToast();
+}
+
+void deleteUserToast() {
+  Fluttertoast.showToast(
+    msg: '정상적으로 탈퇴되었습니다.',
     gravity: ToastGravity.BOTTOM,
     toastLength: Toast.LENGTH_SHORT,
   );
