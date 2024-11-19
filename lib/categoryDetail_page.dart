@@ -1,28 +1,46 @@
 import 'package:flutter/material.dart';
-import '../model/finance_info.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../model/category_info.dart';
-
-enum BlockType { TODAY, YESTERDAY }
+import '../model/finance_info.dart';
 
 class CategoryDetailPage extends StatefulWidget {
-  const CategoryDetailPage({Key? key}) : super(key: key);
+  final String categoryName; // 카테고리 이름
+  final String userId; // 사용자 ID
+
+  const CategoryDetailPage({Key? key, required this.categoryName, required this.userId}) : super(key: key);
 
   @override
   State<CategoryDetailPage> createState() => _CategoryDetailPageState();
 }
 
 class _CategoryDetailPageState extends State<CategoryDetailPage> {
-  List<FinanceInfo> todayList = [
-    FinanceInfo(categoryType: CategoryType.FOOD, price: '-43,300원', paymentPlace: 'T머니', paymentMethod: '나라사랑카드'),
-    FinanceInfo(categoryType: CategoryType.FOOD, price: '-3,000원', paymentPlace: 'SWING', paymentMethod: 'SW_PAYG'),
-  ];
+  List<FinanceInfo> financeList = [];
 
-  List<FinanceInfo> yesterdayList = [
-    FinanceInfo(categoryType: CategoryType.FOOD, price: '-1,080원', paymentPlace: 'SWING', paymentMethod: 'SW_PAYG'),
-    FinanceInfo(categoryType: CategoryType.FOOD, price: '-920원', paymentPlace: 'SWING', paymentMethod: 'SW_PAYG'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchFinanceData();
+  }
 
-  Widget _accountItem(BlockType blockType, FinanceInfo financeInfo) {
+  Future<void> _fetchFinanceData() async {
+    // Firestore에서 데이터 가져오기
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('transactions')
+        .where('userId', isEqualTo: widget.userId)
+        .where('category', isEqualTo: widget.categoryName)
+        .orderBy('date') // 날짜별로 정렬
+        .get(GetOptions(source: Source.cache)); // 로컬 캐시에서 데이터 가져오기
+    setState(() {
+      financeList = snapshot.docs.map((doc) {
+        return FinanceInfo(
+          categoryType: CategoryType.FOOD, // 실제 카테고리 타입으로 변경 필요
+          price: '${doc['price']}원',
+        );
+      }).toList();
+    });
+  }
+
+  Widget _accountItem(FinanceInfo financeInfo) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
@@ -38,20 +56,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                 ),
                 child: Center(child: Text(financeInfo.categoryType.logoImg)),
               ),
-              blockType == BlockType.TODAY
-                  ? Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  child: const Center(
-                      child: Icon(Icons.star, color: Colors.white, size: 8)),
-                  decoration: const BoxDecoration(
-                      color: Colors.lightBlue, shape: BoxShape.circle),
-                ),
-              )
-                  : const SizedBox(),
             ],
           ),
           const SizedBox(width: 16),
@@ -61,11 +65,11 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               children: [
                 Text(
                   financeInfo.price,
-                  style: const TextStyle(fontSize: 20, color: Colors.black), // 수정: 흰색 배경에서 검은색 텍스트
+                  style: const TextStyle(fontSize: 20, color: Colors.black),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${financeInfo.paymentPlace} ${financeInfo.paymentMethod}',
+                  '원래 페이먼드 장소 | 원래 페이먼트 방법 있던 곳',
                   style: const TextStyle(fontSize: 18, color: Colors.grey),
                 ),
               ],
@@ -76,48 +80,18 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
-  Widget _accountList({required BlockType blockType, required List<FinanceInfo> list}) {
-    String title = '';
-    switch (blockType) {
-      case BlockType.TODAY:
-        title = '11월 19일';
-        break;
-      case BlockType.YESTERDAY:
-        title = '11월 18일';
-        break;
-    }
-
-    return Container( // 수정: Container로 감싸서 배경색 지정
-      color: Colors.white24, // 배경색을 흰색으로 설정
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-                fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...List.generate(list.length, (index) => _accountItem(blockType, list[index])),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // 총 금액 및 회수 수치
-    int totalAmount = todayList.fold(0, (sum, item) => sum + int.parse(item.price.replaceAll(',', '').replaceAll('원', '')));
-    int totalCount = todayList.length + yesterdayList.length;
+    int totalAmount = financeList.fold(0, (sum, item) => sum + int.parse(item.price.replaceAll(',', '').replaceAll('원', '')));
+    int totalCount = financeList.length;
 
     return Scaffold(
-      backgroundColor: Colors.white, // 전체 배경을 흰색으로 설정
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('소비 카테고리'),
-        backgroundColor: Colors.white, // AppBar 배경도 흰색으로 설정
-        elevation: 0, // 그림자 제거
+        title: Text(widget.categoryName), // 카테고리 이름 표시
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -128,19 +102,18 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // 왼쪽 정보
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          '2024년 10월 교통·자동차 총 금액',
+                          '총 금액',
                           style: TextStyle(fontSize: 16, color: Colors.black),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '$totalAmount 원',
-                          style: const TextStyle(fontSize: 32, color: Colors.black, fontWeight: FontWeight.bold), // 총 금액 텍스트 색상 수정
+                          style: const TextStyle(fontSize: 32, color: Colors.black, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Container(
@@ -157,7 +130,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                       ],
                     ),
                   ),
-                  // 오른쪽 아이콘
+                  // 오른쪽 아이콘 (예시)
                   Container(
                     width: 50,
                     height: 50,
@@ -165,14 +138,24 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                       color: Colors.blue[200],
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.directions_car, color: Colors.white),
+                    child: const Icon(Icons.account_balance_wallet, color: Colors.white),
                   ),
                 ],
               ),
             ),
-            // 오늘과 어제의 지출 내역
-            _accountList(list: todayList, blockType: BlockType.TODAY),
-            _accountList(list: yesterdayList, blockType: BlockType.YESTERDAY),
+            // 소비 내역 리스트
+            Container(
+              padding: const EdgeInsets.all(24.0),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: financeList.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return _accountItem(financeList[index]);
+                },
+              ),
+            ),
           ],
         ),
       ),

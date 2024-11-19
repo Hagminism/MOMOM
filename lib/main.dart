@@ -19,28 +19,26 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: '/', // 앱 시작 시 로그인 페이지로 이동
-      routes: {
-        '/': (context) => const LoginPage(),  // 로그인 페이지
-        '/main' : (context) => const MainPage(),
-        '/category': (context)=> const CategoryPage(),
-        '/categoryDetail' : (context) => const CategoryDetailPage(),
+      onGenerateRoute: (RouteSettings settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (context) => const LoginPage());
+          case '/main':
+            return MaterialPageRoute(builder: (context) => const MainPage());
+          case '/category':
+            return MaterialPageRoute(builder: (context) => const CategoryPage());
+          case '/categoryDetail':
+            final args = settings.arguments as Map<String, dynamic>; // 매개변수 받을 준비
+            return MaterialPageRoute(
+              builder: (context) => CategoryDetailPage(
+                categoryName: args['categoryName'],
+                userId: args['userId'],
+              ),
+            );
+          default:
+            return null;
+        }
       },
     );
   }
 }
-/*
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Container(
-        width: double.infinity, height: double.infinity,
-        decoration: BoxDecoration(color: Colors.white),
-        child: Text('안녕'),
-      ),
-    );
-  }
-}
-*/
