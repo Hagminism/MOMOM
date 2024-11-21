@@ -24,14 +24,20 @@ class MyApp extends StatelessWidget {
           case '/':
             return MaterialPageRoute(builder: (context) => const LoginPage());
           case '/main':
-            return MaterialPageRoute(builder: (context) => const MainPage());
+            final args = settings.arguments as Map<String, dynamic>; // 매개변수 받을 준비
+            return MaterialPageRoute(
+              builder: (context) => MainPage(userId: args['userId']), // userId 전달
+            );
           case '/category':
-            return MaterialPageRoute(builder: (context) => const CategoryPage());
+            final args = settings.arguments as Map<String, dynamic>; // 매개변수 받을 준비
+            return MaterialPageRoute(
+              builder: (context) => CategoryPage(userId: args['userId']), // userId 전달
+            );
           case '/categoryDetail':
             final args = settings.arguments as Map<String, dynamic>; // 매개변수 받을 준비
             return MaterialPageRoute(
               builder: (context) => CategoryDetailPage(
-                categoryName: args['categoryName'],
+                categoryType: args['categoryName'],
                 userId: args['userId'],
               ),
             );

@@ -5,7 +5,9 @@ import 'analysis_page.dart';
 import 'category_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final String userId;
+
+  const MainPage({super.key, required this.userId});
 
   @override
   _MainPageState createState() => _MainPageState();
@@ -15,12 +17,19 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   // 네비게이션 바에서 전환할 페이지 리스트
-  final List<Widget> _pages = [
-    CalendarPage(),
-    AnalysisPage(),
-    CategoryPage(),
-    MyPageScreen(), // 추가된 페이지
-  ];
+  late final List<Widget> _pages; // late로 선언하여 나중에 초기화
+
+  @override
+  void initState() {
+    super.initState();
+    // userId를 CategoryPage에 전달
+    _pages = [
+      CalendarPage(),
+      AnalysisPage(),
+      CategoryPage(userId: widget.userId), // userId 전달
+      MyPageScreen(), // 추가된 페이지
+    ];
+  }
 
   // 네비게이션 아이템 클릭 시 호출
   void _onItemTapped(int index) {

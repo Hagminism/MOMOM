@@ -2,7 +2,7 @@ import '../model/category_info.dart';
 
 class FinanceInfo {
   final CategoryType categoryType;
-  final String price;
+  final int price;
 
   FinanceInfo({
     required this.categoryType,

@@ -4,10 +4,10 @@ import '../model/category_info.dart';
 import '../model/finance_info.dart';
 
 class CategoryDetailPage extends StatefulWidget {
-  final String categoryName; // 카테고리 이름
+  final String categoryType; // 카테고리 이름
   final String userId; // 사용자 ID
 
-  const CategoryDetailPage({Key? key, required this.categoryName, required this.userId}) : super(key: key);
+  const CategoryDetailPage({Key? key, required this.categoryType, required this.userId}) : super(key: key);
 
   @override
   State<CategoryDetailPage> createState() => _CategoryDetailPageState();
@@ -15,10 +15,14 @@ class CategoryDetailPage extends StatefulWidget {
 
 class _CategoryDetailPageState extends State<CategoryDetailPage> {
   List<FinanceInfo> financeList = [];
+  late CategoryType category; // CategoryType 변수를 클래스 상태로 저장
 
   @override
   void initState() {
     super.initState();
+    category = CategoryType.values.firstWhere(
+          (e) => e.categoryName == widget.categoryType
+    );
     _fetchFinanceData();
   }
 
@@ -27,14 +31,15 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection('transactions')
         .where('userId', isEqualTo: widget.userId)
-        .where('category', isEqualTo: widget.categoryName)
-        .orderBy('date') // 날짜별로 정렬
-        .get(GetOptions(source: Source.cache)); // 로컬 캐시에서 데이터 가져오기
+        .where('category', isEqualTo: widget.categoryType)
+        .orderBy('date',descending:true)
+        .get(); // 캐시에서 데이터 가져오기
+
     setState(() {
       financeList = snapshot.docs.map((doc) {
         return FinanceInfo(
-          categoryType: CategoryType.FOOD, // 실제 카테고리 타입으로 변경 필요
-          price: '${doc['price']}원',
+          categoryType: category, // 저장된 category 사용
+          price: doc['price'],
         );
       }).toList();
     });
@@ -54,7 +59,6 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                   color: financeInfo.categoryType.backgroundColor,
                   shape: BoxShape.circle,
                 ),
-                child: Center(child: Text(financeInfo.categoryType.logoImg)),
               ),
             ],
           ),
@@ -64,7 +68,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  financeInfo.price,
+                  '${financeInfo.price}',
                   style: const TextStyle(fontSize: 20, color: Colors.black),
                 ),
                 const SizedBox(height: 4),
@@ -83,13 +87,13 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
   @override
   Widget build(BuildContext context) {
     // 총 금액 및 회수 수치
-    int totalAmount = financeList.fold(0, (sum, item) => sum + int.parse(item.price.replaceAll(',', '').replaceAll('원', '')));
+    int totalAmount = financeList.fold(0, (sum, item) => sum + item.price);
     int totalCount = financeList.length;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.categoryName), // 카테고리 이름 표시
+        title: Text(widget.categoryType), // 카테고리 이름 표시
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -138,7 +142,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                       color: Colors.blue[200],
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.account_balance_wallet, color: Colors.white),
+                    child: Icon(
+                      category.icon, // 카테고리 타입의 아이콘 사용
+                      color: Colors.blue.withOpacity(0.6),
+                    ),
                   ),
                 ],
               ),

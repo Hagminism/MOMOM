@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:newflutter/categoryDetail_page.dart';
+import '../model/category_info.dart'; // 카테고리 타입 열거형 추가
 
 class CategoryPage extends StatelessWidget {
-  const CategoryPage({super.key});
+  final String userId;
+  const CategoryPage({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
-    // 로그인한 사용자의 ID
-    final String userId = "junho087387@gmail.com"; // 실제 사용자 ID로 변경
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -30,7 +30,7 @@ class CategoryPage extends StatelessWidget {
         future: FirebaseFirestore.instance
             .collection('transactions')
             .where('userId', isEqualTo: userId)
-            .get(GetOptions(source: Source.cache)), // 로컬 캐시에서 데이터 가져오기
+            .get(), // 캐시에서 데이터 가져오기
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -60,7 +60,15 @@ class CategoryPage extends StatelessWidget {
               List<DocumentSnapshot> transactions = categorizedData[category]!;
 
               // 카테고리별 거래 총액 계산
-              int totalAmount = transactions.fold(0, (sum, doc) => sum + (doc['price'] as int));
+              int totalAmount = transactions.fold(0, (sum, doc) {
+                int price = doc['price'];
+                return sum + price;
+              });
+
+              // CategoryType으로 변환
+              CategoryType categoryType = CategoryType.values.firstWhere(
+                    (e) => e.categoryName == category
+              );
 
               return GestureDetector(
                 onTap: () {
@@ -68,7 +76,7 @@ class CategoryPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CategoryDetailPage(categoryName: category, userId: userId),
+                      builder: (context) => CategoryDetailPage(categoryType: category, userId: userId),
                     ),
                   );
                 },
@@ -88,12 +96,7 @@ class CategoryPage extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Icon(
-                            // 카테고리에 따라 아이콘 설정
-                            category == '식비' ? Icons.fastfood :
-                            category == '쇼핑' ? Icons.shopping_cart :
-                            category == '이체' ? Icons.account_balance_wallet :
-                            category == '교통비' ? Icons.train :
-                            Icons.more_horiz,
+                            categoryType.icon, // 카테고리 타입의 아이콘 사용
                             color: Colors.blue.withOpacity(0.6),
                           ),
                         ),
@@ -104,7 +107,7 @@ class CategoryPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              category, // 카테고리 이름
+                              categoryType.categoryName, // 카테고리 이름을 categoryName 메서드로 가져오기
                               style: const TextStyle(color: Colors.black, fontSize: 18),
                             ),
                             const SizedBox(height: 4),

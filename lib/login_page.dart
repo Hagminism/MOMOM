@@ -30,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
       final credential = await auth.signInWithEmailAndPassword(email: email.text, password: password.text);
       user = credential.user;
       if(user != null) {
+        DocumentSnapshot userDoc = await firestore.collection('users').doc(user!.uid).get();
+        String userId = userDoc['email'];
         // ScaffoldMessenger.of(context)
         //     .showSnackBar(SnackBar(content: Text("안녕하세요, ${user.email}님!")));
 
@@ -37,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => MainPage(),
+            builder: (context) => MainPage(userId:userId),
           ),(route) => false,
         );
 
