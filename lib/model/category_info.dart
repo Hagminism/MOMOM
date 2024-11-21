@@ -44,7 +44,7 @@ extension ParseToCategoryType on CategoryType {
       case CategoryType.EDUCATION:
         return '교육';
       case CategoryType.LIVING:
-        return '교육';
+        return '생활';
       case CategoryType.DONATION:
         return '기부';
       case CategoryType.SAVING:
