@@ -305,7 +305,7 @@ void showDeleteAccountDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () {
-              //deleteUser(context);
+              deleteUser(context);
             },
             child: Text("확인"),
           ),
@@ -331,7 +331,7 @@ void showSignOutDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () {
-              //signOut(context);
+              signOut(context);
             },
             child: Text("확인"),
           ),
