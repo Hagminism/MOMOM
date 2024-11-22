@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 숫자 입력 제한을 위한 패키지
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'login_page.dart';
 
-// Firebase 인증(Authentication) 객체
-// late 선언하면 로그아웃 -> 재로그인 -> 다시 로그아웃시,
-// auth 객체가 이미 존재하는 상태에서 late 상태로 선언을 한 번 더 하게 되면서 중복이 발생.
+ Firebase 인증(Authentication) 객체
+ late 선언하면 로그아웃 -> 재로그인 -> 다시 로그아웃시,
+ auth 객체가 이미 존재하는 상태에서 late 상태로 선언을 한 번 더 하게 되면서 중복이 발생.
 final FirebaseAuth auth = FirebaseAuth.instance;
 
 class MyPageScreen extends StatelessWidget {
@@ -41,17 +42,17 @@ class MyPageScreen extends StatelessWidget {
           Expanded(
             child: Center(
               child: Container(
-                padding: EdgeInsets.all(16),
-                margin: EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.all(40),
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 50),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                      offset: Offset(0, 5),
+                      blurRadius: 15,
+                      spreadRadius: 3,
+                      offset: Offset(0, 6),
                     ),
                   ],
                 ),
@@ -61,9 +62,9 @@ class MyPageScreen extends StatelessWidget {
                     // '나의 메뉴' 텍스트
                     Text(
                       "나의 메뉴",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 30),
                     // 메뉴 버튼들
                     MenuItem(
                       text: "월 예산 설정",
@@ -147,6 +148,9 @@ void showBudgetDialog(BuildContext context) {
         content: TextField(
           decoration: InputDecoration(labelText: "월 예산"),
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly, // 숫자만 입력 허용
+          ],
         ),
         actions: [
           TextButton(
@@ -176,25 +180,89 @@ void showAccountSettingsDialog(BuildContext context) {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: "변경할 사용자 이름",
-                hintText: "이름",
-              ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                showChangeNameDialog(context);
+              },
+              child: Text("이름 변경"),
             ),
             SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                showChangePasswordDialog(context);
+              },
+              child: Text("비밀번호 변경"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text("취소"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void showChangeNameDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("이름 변경"),
+        content: TextField(
+          decoration: InputDecoration(
+            labelText: "변경할 사용자 이름",
+            hintText: "이름",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text("취소"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 이름 변경 로직 추가
+            },
+            child: Text("확인"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void showChangePasswordDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("비밀번호 변경"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             TextField(
               decoration: InputDecoration(
-                labelText: "변경할 패스워드",
-                hintText: "패스워드",
+                labelText: "변경할 비밀번호",
+                hintText: "비밀번호",
               ),
               obscureText: true,
             ),
             SizedBox(height: 10),
             TextField(
               decoration: InputDecoration(
-                labelText: "패스워드 확인",
-                hintText: "패스워드 확인",
+                labelText: "비밀번호 확인",
+                hintText: "비밀번호 확인",
               ),
               obscureText: true,
             ),
@@ -210,6 +278,7 @@ void showAccountSettingsDialog(BuildContext context) {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
+              // 비밀번호 변경 로직 추가
             },
             child: Text("확인"),
           ),
@@ -218,6 +287,7 @@ void showAccountSettingsDialog(BuildContext context) {
     },
   );
 }
+
 
 void showDeleteAccountDialog(BuildContext context) {
   showDialog(
@@ -235,7 +305,7 @@ void showDeleteAccountDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () {
-              deleteUser(context);
+              //deleteUser(context);
             },
             child: Text("확인"),
           ),
@@ -261,8 +331,8 @@ void showSignOutDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () {
-              signOut(context);
-              },
+              //signOut(context);
+            },
             child: Text("확인"),
           ),
         ],
