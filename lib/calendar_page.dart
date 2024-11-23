@@ -593,46 +593,49 @@ class _CalendarPageState extends State<CalendarPage> {
 
   // 입금 내역을 firebase firestore로 전송하는 함수
   void addDeposit() async {
-    await firestore
-        .collection('transactions')
-        .doc()
-        .set({
-      'isDeposit' : true,
-      'date' : _selectedDay?.toUtc().toString().split(" ")[0],
-      'category' : selectedCategory.categoryName,
-      'place' : depositPlace.text,
-      'price' : depositMoney.text,
-      'memo' : depositMemo.text,
-      'userId' : auth.currentUser?.email,
-    });
+    try {
+      await firestore.collection('transactions').doc().set({
+        'isDeposit': true,
+        'date': Timestamp.fromDate(_selectedDay ?? DateTime.now()), // DateTime -> Timestamp 변환
+        'category': selectedCategory.categoryName,
+        'place': depositPlace.text,
+        'price': int.parse(depositMoney.text), // 문자열 -> 숫자 변환
+        'memo': depositMemo.text,
+        'userId': auth.currentUser?.email,
+      });
+    } catch (e) {
+      sendErrorToast();
+    }
   }
 
   // 지출 내역을 firebase firestore로 전송하는 함수
   void addWithdraw() async {
-    await firestore
-        .collection('transactions')
-        .doc()
-        .set({
-      'isDeposit' : false,
-      'date' : _selectedDay?.toUtc().toString().split(" ")[0],
-      'category' : selectedCategory.categoryName,
-      'place' : withdrawPlace.text,
-      'price' : withdrawMoney.text,
-      'memo' : withdrawMemo.text,
-      'userId' : auth.currentUser?.email,
-    });
+    try {
+      await firestore.collection('transactions').doc().set({
+        'isDeposit': false,
+        'date': Timestamp.fromDate(_selectedDay ?? DateTime.now()), // DateTime -> Timestamp 변환
+        'category': selectedCategory.categoryName,
+        'place': withdrawPlace.text,
+        'price': int.parse(withdrawMoney.text), // 문자열 -> 숫자 변환
+        'memo': withdrawMemo.text,
+        'userId': auth.currentUser?.email,
+      });
+    } catch (e) {
+      sendErrorToast();
+    }
   }
 
   // 메모를 firebase firestore로 전송하는 함수
   void addMemo() async {
-    await firestore
-        .collection('memo')
-        .doc()
-        .set({
-      'date' : _selectedDay?.toUtc().toString().split(" ")[0],
-      'memo' : plainMemo.text,
-      'userId' : auth.currentUser?.email,
-    });
+    try {
+      await firestore.collection('memo').doc().set({
+        'date': Timestamp.fromDate(_selectedDay ?? DateTime.now()), // DateTime -> Timestamp 변환
+        'memo': plainMemo.text,
+        'userId': auth.currentUser?.email,
+      });
+    } catch (e) {
+      sendErrorToast();
+    }
   }
 
   // 입금, 지출 내역 추가시 필요한 정보를 빠트렸을 때 띄울 Toast 함수
@@ -640,6 +643,16 @@ class _CalendarPageState extends State<CalendarPage> {
     Fluttertoast.showToast(
       backgroundColor: Colors.red,
       msg: '필요한 정보를 모두 작성했는지 확인하세요!',
+      gravity: ToastGravity.BOTTOM,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
+  // 에러 관련 Toast
+  void sendErrorToast() {
+    Fluttertoast.showToast(
+      backgroundColor: Colors.red,
+      msg: '에러 발생',
       gravity: ToastGravity.BOTTOM,
       toastLength: Toast.LENGTH_SHORT,
     );
