@@ -41,6 +41,11 @@ class MyApp extends StatelessWidget {
                 userId: args['userId'],
               ),
             );
+          case '/analysis':  // 분석 페이지 라우트 추가
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (context) => AnalysisPage(userId: args['userId']),
+            );
           default:
             return null;
         }
