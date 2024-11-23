@@ -39,6 +39,7 @@ class MyApp extends StatelessWidget {
               builder: (context) => CategoryDetailPage(
                 categoryType: args['categoryName'],
                 userId: args['userId'],
+                selectedMonth: args['selectedMonth'],
               ),
             );
           case '/analysis':  // 분석 페이지 라우트 추가

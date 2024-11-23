@@ -4,9 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'login_page.dart';
 
- Firebase 인증(Authentication) 객체
- late 선언하면 로그아웃 -> 재로그인 -> 다시 로그아웃시,
- auth 객체가 이미 존재하는 상태에서 late 상태로 선언을 한 번 더 하게 되면서 중복이 발생.
 final FirebaseAuth auth = FirebaseAuth.instance;
 
 class MyPageScreen extends StatelessWidget {

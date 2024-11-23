@@ -63,8 +63,33 @@ extension ParseToCategoryType on CategoryType {
         return const Color.fromARGB(255, 17, 35, 98);
       case CategoryType.ENTERTAINMENT:
         return const Color.fromARGB(255, 75, 143, 232);
+      case CategoryType.CAFE:
+        return const Color.fromARGB(255,1,175,109);
+      case CategoryType.STORE:
+        return const Color.fromARGB(255,253,207,86);
+      case CategoryType.ENTERTAINMENT:
+        return const Color.fromARGB(255,245,159,44);
+      case CategoryType.SHOPPING:
+        return const Color.fromARGB(255,238,67,80);
+      case CategoryType.HOBBY:
+        return const Color.fromARGB(255,243,100,113);
+      case CategoryType.HEALTH:
+        return const Color.fromARGB(255,21,196,127);
+      case CategoryType.TAX:
+        return const Color.fromARGB(255,108,119,132);
+      case CategoryType.BEAUTY:
+        return const Color.fromARGB(255,161,25,37);
+      case CategoryType.EDUCATION:
+        return const Color.fromARGB(255,175,185,192);
+      case CategoryType.LIVING:
+        return const Color.fromARGB(255,159,50,196);
+      case CategoryType.DONATION:
+        return const Color.fromARGB(255,183,56,100);
+      case CategoryType.SAVING:
+        return const Color.fromARGB(255,133,162,213);
+
       default:
-        return Colors.white;
+        return const Color.fromARGB(255,0,0,0);
     }
   }
 
@@ -74,7 +99,6 @@ extension ParseToCategoryType on CategoryType {
         return Icons.train;
       case CategoryType.FOOD:
         return Icons.fastfood;
-
       case CategoryType.CAFE:
         return Icons.coffee;
       case CategoryType.STORE:

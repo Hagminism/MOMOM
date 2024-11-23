@@ -6,8 +6,14 @@ import '../model/finance_info.dart';
 class CategoryDetailPage extends StatefulWidget {
   final String categoryType; // 카테고리 이름
   final String userId; // 사용자 ID
+  final String selectedMonth; // 선택된 월
 
-  const CategoryDetailPage({Key? key, required this.categoryType, required this.userId}) : super(key: key);
+  const CategoryDetailPage({
+    Key? key,
+    required this.categoryType,
+    required this.userId,
+    required this.selectedMonth,
+  }) : super(key: key);
 
   @override
   State<CategoryDetailPage> createState() => _CategoryDetailPageState();
@@ -21,67 +27,56 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
   void initState() {
     super.initState();
     category = CategoryType.values.firstWhere(
-          (e) => e.categoryName == widget.categoryType
+          (e) => e.categoryName == widget.categoryType,
     );
     _fetchFinanceData();
   }
 
   Future<void> _fetchFinanceData() async {
+    // 선택된 월의 시작 및 종료 날짜 계산
+    DateTime startDate = DateTime(
+      int.parse(widget.selectedMonth.split('-')[0]),
+      int.parse(widget.selectedMonth.split('-')[1]),
+      1,
+    );
+
+    DateTime endDate = DateTime(
+      startDate.year,
+      startDate.month + 1,
+      1,
+    );
+
     // Firestore에서 데이터 가져오기
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection('transactions')
         .where('userId', isEqualTo: widget.userId)
         .where('category', isEqualTo: widget.categoryType)
-        .orderBy('date',descending:true)
-        .get(); // 캐시에서 데이터 가져오기
+        .where('date', isGreaterThanOrEqualTo: startDate)
+        .where('date', isLessThan: endDate)
+        .orderBy('date', descending: true)
+        .get();
 
     setState(() {
       financeList = snapshot.docs.map((doc) {
         return FinanceInfo(
-          categoryType: category, // 저장된 category 사용
+          categoryType: category,
           price: doc['price'],
+          date: (doc['date'] as Timestamp).toDate(), // 날짜 추가
         );
       }).toList();
     });
   }
 
-  Widget _accountItem(FinanceInfo financeInfo) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: financeInfo.categoryType.backgroundColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${financeInfo.price}',
-                  style: const TextStyle(fontSize: 20, color: Colors.black),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '원래 페이먼드 장소 | 원래 페이먼트 방법 있던 곳',
-                  style: const TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  Map<DateTime, List<FinanceInfo>> _groupByDate(List<FinanceInfo> financeList) {
+    Map<DateTime, List<FinanceInfo>> groupedData = {};
+    for (var finance in financeList) {
+      DateTime date = DateTime(finance.date.year, finance.date.month, finance.date.day);
+      if (!groupedData.containsKey(date)) {
+        groupedData[date] = [];
+      }
+      groupedData[date]!.add(finance);
+    }
+    return groupedData;
   }
 
   @override
@@ -89,6 +84,9 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     // 총 금액 및 회수 수치
     int totalAmount = financeList.fold(0, (sum, item) => sum + item.price);
     int totalCount = financeList.length;
+
+    // 날짜별로 그룹화
+    Map<DateTime, List<FinanceInfo>> groupedFinance = _groupByDate(financeList);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -156,15 +154,73 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: financeList.length,
+                itemCount: groupedFinance.keys.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  return _accountItem(financeList[index]);
+                  DateTime dateKey = groupedFinance.keys.elementAt(index);
+                  List<FinanceInfo> dailyFinances = groupedFinance[dateKey]!;
+
+                  String dateString = '${dateKey.month}월 ${dateKey.day}일 ${_getDayOfWeek(dateKey)}요일';
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dateString,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color:Colors.black),
+                      ),
+                      ...dailyFinances.map((finance) => _accountItem(finance)).toList(),
+                    ],
+                  );
                 },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _getDayOfWeek(DateTime date) {
+    List<String> days = ['일', '월', '화', '수', '목', '금', '토'];
+    return days[date.weekday % 7];
+  }
+
+  Widget _accountItem(FinanceInfo financeInfo) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: financeInfo.categoryType.backgroundColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '-${financeInfo.price} 원',
+                  style: const TextStyle(fontSize: 20, color: Colors.black),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '원래 페이먼트 장소 | 원래 페이먼트 방법',
+                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
