@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // 숫자 입력 제한을 위한 패키지
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore 사용
 import 'package:fluttertoast/fluttertoast.dart';
 import 'login_page.dart';
 
@@ -19,31 +20,50 @@ class MyPageScreen extends StatelessWidget {
           // 프로필 사진, 이름, 이메일 부분
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: NetworkImage(
-                    "https://via.placeholder.com/150", // 프로필 이미지 URL
-                  ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "카리나 님",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text("katarinabluu@aespa.com", style: TextStyle(color: Colors.grey)),
-              ],
+            child: FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(auth.currentUser?.uid)
+                  .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+                if (!snapshot.hasData || snapshot.data?.data() == null) {
+                  return Text("사용자 정보를 불러오는 데 실패했습니다.");
+                }
+                var userData = snapshot.data!.data() as Map<String, dynamic>;
+                return Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: NetworkImage(
+                        userData['profile_image'] ??
+                            "https://via.placeholder.com/150", // 프로필 이미지 URL
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "${userData['username']} 님",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      userData['email'],
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Expanded(
             child: Center(
               child: Container(
-                padding: EdgeInsets.all(40),
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 50),
+                padding: EdgeInsets.all(35),
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 40),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
@@ -81,7 +101,12 @@ class MyPageScreen extends StatelessWidget {
                         showDeleteAccountDialog(context);
                       },
                     ),
-                    MenuItem(text: "로그아웃", onTap: () { showSignOutDialog(context); }),
+                    MenuItem(
+                      text: "로그아웃",
+                      onTap: () {
+                        showSignOutDialog(context);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -137,12 +162,14 @@ class MenuItem extends StatelessWidget {
 }
 
 void showBudgetDialog(BuildContext context) {
+  TextEditingController budgetController = TextEditingController();
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text("월 예산 설정"),
         content: TextField(
+          controller: budgetController,
           decoration: InputDecoration(labelText: "월 예산"),
           keyboardType: TextInputType.number,
           inputFormatters: [
@@ -157,7 +184,19 @@ void showBudgetDialog(BuildContext context) {
             child: Text("취소"),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              int? budget = int.tryParse(budgetController.text);
+              if (budget != null) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(auth.currentUser?.uid)
+                      .update({'monthly_budget': budget});
+                  Fluttertoast.showToast(msg: "월 예산이 설정되었습니다.");
+                } catch (e) {
+                  Fluttertoast.showToast(msg: "월 예산 설정에 실패했습니다: $e");
+                }
+              }
               Navigator.of(context).pop();
             },
             child: Text("확인"),
@@ -206,14 +245,15 @@ void showAccountSettingsDialog(BuildContext context) {
     },
   );
 }
-
 void showChangeNameDialog(BuildContext context) {
+  TextEditingController nameController = TextEditingController();
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text("이름 변경"),
         content: TextField(
+          controller: nameController,
           decoration: InputDecoration(
             labelText: "변경할 사용자 이름",
             hintText: "이름",
@@ -227,9 +267,20 @@ void showChangeNameDialog(BuildContext context) {
             child: Text("취소"),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              String newName = nameController.text.trim();
+              if (newName.isNotEmpty) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(auth.currentUser?.uid)
+                      .update({'username': newName});
+                  Fluttertoast.showToast(msg: "이름이 변경되었습니다.");
+                } catch (e) {
+                  Fluttertoast.showToast(msg: "이름 변경에 실패했습니다: $e");
+                }
+              }
               Navigator.of(context).pop();
-              // 이름 변경 로직 추가
             },
             child: Text("확인"),
           ),
@@ -240,6 +291,8 @@ void showChangeNameDialog(BuildContext context) {
 }
 
 void showChangePasswordDialog(BuildContext context) {
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -249,6 +302,7 @@ void showChangePasswordDialog(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
+              controller: passwordController,
               decoration: InputDecoration(
                 labelText: "변경할 비밀번호",
                 hintText: "비밀번호",
@@ -257,6 +311,7 @@ void showChangePasswordDialog(BuildContext context) {
             ),
             SizedBox(height: 10),
             TextField(
+              controller: confirmPasswordController,
               decoration: InputDecoration(
                 labelText: "비밀번호 확인",
                 hintText: "비밀번호 확인",
@@ -273,9 +328,25 @@ void showChangePasswordDialog(BuildContext context) {
             child: Text("취소"),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              String newPassword = passwordController.text.trim();
+              String confirmPassword = confirmPasswordController.text.trim();
+
+              if (newPassword.isEmpty || confirmPassword.isEmpty) {
+                Fluttertoast.showToast(msg: "비밀번호를 입력해주세요.");
+                return;
+              }
+              if (newPassword != confirmPassword) {
+                Fluttertoast.showToast(msg: "비밀번호가 일치하지 않습니다.");
+                return;
+              }
+              try {
+                await auth.currentUser?.updatePassword(newPassword);
+                Fluttertoast.showToast(msg: "비밀번호가 성공적으로 변경되었습니다.");
+              } catch (e) {
+                Fluttertoast.showToast(msg: "비밀번호 변경에 실패했습니다: $e");
+              }
               Navigator.of(context).pop();
-              // 비밀번호 변경 로직 추가
             },
             child: Text("확인"),
           ),
@@ -284,7 +355,6 @@ void showChangePasswordDialog(BuildContext context) {
     },
   );
 }
-
 
 void showDeleteAccountDialog(BuildContext context) {
   showDialog(
@@ -301,8 +371,31 @@ void showDeleteAccountDialog(BuildContext context) {
             child: Text("취소"),
           ),
           TextButton(
-            onPressed: () {
-              deleteUser(context);
+            onPressed: () async {
+              try {
+                String? userId = auth.currentUser?.uid;
+
+                // Firestore에서 사용자 데이터 삭제
+                if (userId != null) {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(userId)
+                      .delete();
+                }
+
+                // Firebase Authentication에서 사용자 삭제
+                await auth.currentUser?.delete();
+
+                // 탈퇴 성공 시 로그인 페이지로 이동
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                      (route) => false,
+                );
+                Fluttertoast.showToast(msg: "정상적으로 회원 탈퇴가 완료되었습니다.");
+              } catch (e) {
+                Fluttertoast.showToast(msg: "회원 탈퇴에 실패했습니다: $e");
+              }
             },
             child: Text("확인"),
           ),
@@ -327,8 +420,8 @@ void showSignOutDialog(BuildContext context) {
             child: Text("취소"),
           ),
           TextButton(
-            onPressed: () {
-              signOut(context);
+            onPressed: () async {
+              await signOut(context);
             },
             child: Text("확인"),
           ),
@@ -338,49 +431,16 @@ void showSignOutDialog(BuildContext context) {
   );
 }
 
-void signOut(BuildContext context) {
-  auth.signOut(); // 로그아웃 진행
-
-  // 메인 페이지로 이동하면서 백스택 제거
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (context) => LoginPage(),
-    ),(route) => false,
-  );
-
-  // 로그아웃 되었다는 내용의 Toast 생성
-  signOutToast();
-}
-
-// 로그아웃시 띄울 Toast 함수
-void signOutToast() {
-  Fluttertoast.showToast(
-    msg: '로그아웃되었습니다.',
-    gravity: ToastGravity.BOTTOM,
-    toastLength: Toast.LENGTH_SHORT,
-  );
-}
-
-void deleteUser(BuildContext context) {
-  auth.currentUser?.delete(); // 로그아웃 진행
-
-  // 메인 페이지로 이동하면서 백스택 제거
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (context) => LoginPage(),
-    ),(route) => false,
-  );
-
-  // 로그아웃 되었다는 내용의 Toast 생성
-  deleteUserToast();
-}
-
-void deleteUserToast() {
-  Fluttertoast.showToast(
-    msg: '정상적으로 탈퇴되었습니다.',
-    gravity: ToastGravity.BOTTOM,
-    toastLength: Toast.LENGTH_SHORT,
-  );
+Future<void> signOut(BuildContext context) async {
+  try {
+    await auth.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false,
+    );
+    Fluttertoast.showToast(msg: "로그아웃되었습니다.");
+  } catch (e) {
+    Fluttertoast.showToast(msg: "로그아웃에 실패했습니다: $e");
+  }
 }
