@@ -16,7 +16,9 @@ class MyPageScreen extends StatelessWidget {
         title: Text("마이페이지", style: TextStyle(color: Colors.black)),
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          SizedBox(height: 20),
           // 프로필 사진, 이름, 이메일 부분
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -59,8 +61,9 @@ class MyPageScreen extends StatelessWidget {
           Expanded(
             child: Center(
               child: Container(
+                height: 450,
                 padding: EdgeInsets.all(35),
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+                margin: EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
@@ -75,13 +78,14 @@ class MyPageScreen extends StatelessWidget {
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     // '나의 메뉴' 텍스트
                     Text(
                       "나의 메뉴",
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 30),
+                    SizedBox(height: 10),
                     // 메뉴 버튼들
                     MenuItem(
                       text: "월 예산 설정",
@@ -113,18 +117,6 @@ class MyPageScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "홈"),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "통계"),
-          BottomNavigationBarItem(icon: Icon(Icons.category), label: "카테고리"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "마이페이지"),
-        ],
-        currentIndex: 3,
-        onTap: (index) {
-          // 네비게이션 아이템 클릭 시 동작 추가 가능
-        },
       ),
     );
   }
