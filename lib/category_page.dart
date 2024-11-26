@@ -77,6 +77,7 @@ class _CategoryPageState extends State<CategoryPage> {
               future: FirebaseFirestore.instance
                   .collection('transactions')
                   .where('userId', isEqualTo: widget.userId)
+                  .where('isDeposit', isEqualTo:false)
                   .get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
