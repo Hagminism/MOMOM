@@ -307,6 +307,8 @@ void showChangeNameDialog(BuildContext context) {
 void showChangePasswordDialog(BuildContext context) {
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
+  TextEditingController currentPasswordController = TextEditingController();
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -316,10 +318,19 @@ void showChangePasswordDialog(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
+              controller: currentPasswordController,
+              decoration: InputDecoration(
+                labelText: "현재 비밀번호",
+                hintText: "현재 비밀번호를 입력하세요",
+              ),
+              obscureText: true,
+            ),
+            SizedBox(height: 10),
+            TextField(
               controller: passwordController,
               decoration: InputDecoration(
-                labelText: "변경할 비밀번호",
-                hintText: "비밀번호",
+                labelText: "새 비밀번호",
+                hintText: "변경할 새 비밀번호를 입력하세요",
               ),
               obscureText: true,
             ),
@@ -328,7 +339,7 @@ void showChangePasswordDialog(BuildContext context) {
               controller: confirmPasswordController,
               decoration: InputDecoration(
                 labelText: "비밀번호 확인",
-                hintText: "비밀번호 확인",
+                hintText: "새 비밀번호를 다시 입력하세요",
               ),
               obscureText: true,
             ),
@@ -343,23 +354,47 @@ void showChangePasswordDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () async {
+              String currentPassword = currentPasswordController.text.trim();
               String newPassword = passwordController.text.trim();
               String confirmPassword = confirmPasswordController.text.trim();
 
-              if (newPassword.isEmpty || confirmPassword.isEmpty) {
-                Fluttertoast.showToast(msg: "비밀번호를 입력해주세요.");
+              if (newPassword.isEmpty || confirmPassword.isEmpty || currentPassword.isEmpty) {
+                Fluttertoast.showToast(msg: "모든 필드를 입력해주세요.");
                 return;
               }
               if (newPassword != confirmPassword) {
-                Fluttertoast.showToast(msg: "비밀번호가 일치하지 않습니다.");
+                Fluttertoast.showToast(msg: "새 비밀번호가 일치하지 않습니다.");
                 return;
               }
+
               try {
-                await auth.currentUser?.updatePassword(newPassword);
-                Fluttertoast.showToast(msg: "비밀번호가 성공적으로 변경되었습니다.");
+                // 현재 사용자의 이메일 가져오기
+                String? email = auth.currentUser?.email;
+
+                if (email != null) {
+                  // 재인증
+                  AuthCredential credential = EmailAuthProvider.credential(
+                    email: email,
+                    password: currentPassword,
+                  );
+                  await auth.currentUser?.reauthenticateWithCredential(credential);
+
+                  // 비밀번호 변경
+                  await auth.currentUser?.updatePassword(newPassword);
+                  Fluttertoast.showToast(msg: "비밀번호가 성공적으로 변경되었습니다.");
+                } else {
+                  Fluttertoast.showToast(msg: "현재 사용자 정보를 가져올 수 없습니다.");
+                }
+              } on FirebaseAuthException catch (e) {
+                if (e.code == 'wrong-password') {
+                  Fluttertoast.showToast(msg: "현재 비밀번호가 올바르지 않습니다.");
+                } else {
+                  Fluttertoast.showToast(msg: "비밀번호 변경에 실패했습니다: ${e.message}");
+                }
               } catch (e) {
-                Fluttertoast.showToast(msg: "비밀번호 변경에 실패했습니다: $e");
+                Fluttertoast.showToast(msg: "알 수 없는 오류가 발생했습니다: $e");
               }
+
               Navigator.of(context).pop();
             },
             child: Text("확인"),
@@ -369,6 +404,7 @@ void showChangePasswordDialog(BuildContext context) {
     },
   );
 }
+
 
 void showDeleteAccountDialog(BuildContext context) {
   showDialog(
