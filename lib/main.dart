@@ -3,9 +3,9 @@ import 'package:newflutter/analysis_page.dart';
 import 'package:newflutter/categoryDetail_page.dart';
 import 'package:newflutter/category_page.dart';
 import 'package:newflutter/main_page.dart';
-import 'package:newflutter/mypage_page.dart';
 import 'login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +17,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      // 자신에게 필요한 언어 locale을 모두 추가
+      supportedLocales: [
+        Locale('en'), // 영어
+        Locale('ko'), // 한국어
+      ],
       debugShowCheckedModeBanner: false,
       initialRoute: '/', // 앱 시작 시 로그인 페이지로 이동
       onGenerateRoute: (RouteSettings settings) {

@@ -16,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth auth = FirebaseAuth.instance; // Firebase 인증(Authentication) 객체
   final FirebaseFirestore firestore = FirebaseFirestore.instance; // Firebase Firestore 객체
   late User? user; // 사용자 및 인증에 관련된 정보가 포함된 User 객체 late로 선언
+  late String username; // 사용자 이름을 저장할 변수. 로그인 성공시 해당 계정의 username을 가져와 초기화 예정
 
   // controller 객체. 위젯의 속성으로 추가해서 네이티브에서의 id처럼 사용 가능하다.
   // 가령, 이메일 텍스트 필드의 텍스트를 가져오고 싶다면 email.text로 가져올 수 있음.
@@ -31,15 +32,13 @@ class _LoginPageState extends State<LoginPage> {
       user = credential.user;
       if(user != null) {
         DocumentSnapshot userDoc = await firestore.collection('users').doc(user!.uid).get();
-        String userId = userDoc['email'];
-        // ScaffoldMessenger.of(context)
-        //     .showSnackBar(SnackBar(content: Text("안녕하세요, ${user.email}님!")));
+        username = userDoc['username'];
 
         // 메인 페이지로 이동하면서 백스택 제거
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => MainPage(userId:userId),
+            builder: (context) => MainPage(userId: auth.currentUser!.email.toString()),
           ),(route) => false,
         );
 
@@ -61,7 +60,8 @@ class _LoginPageState extends State<LoginPage> {
   // 로그인을 성공했을 때 띄울 Toast 함수
   void loginSuccessedToast() {
     Fluttertoast.showToast(
-      msg: '${user?.email}님 환영합니다!',
+      backgroundColor: Colors.green,
+      msg: '${username}님 환영합니다!',
       gravity: ToastGravity.BOTTOM,
       toastLength: Toast.LENGTH_SHORT,
     );

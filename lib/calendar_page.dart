@@ -53,6 +53,7 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
       ),
       body: TableCalendar(
+        locale: 'ko_KR',
         rowHeight: 100,
         firstDay: DateTime.utc(2010, 10, 16),
         lastDay: DateTime.utc(2030, 3, 14),
@@ -79,6 +80,7 @@ class _CalendarPageState extends State<CalendarPage> {
         },
         calendarBuilders: CalendarBuilders(
           markerBuilder: (context, day, _) {
+            // 캘린더에 마커 렌더링
             if (_markers.containsKey(day)) {
               return Positioned(
                 bottom: 8,
@@ -110,6 +112,7 @@ class _CalendarPageState extends State<CalendarPage> {
   // DatePicker 팝업 함수
   void _showDatePicker(focusedDay) async {
     final DateTime? pickedDate = await showDatePicker(
+      locale: const Locale('ko', 'KR'),
       context: context,
       initialDate: focusedDay,
       firstDate: DateTime(2010),
@@ -120,6 +123,7 @@ class _CalendarPageState extends State<CalendarPage> {
     if (pickedDate != null) {
       setState(() {
         _focusedDay = pickedDate; // 선택한 날짜로 이동
+        _selectedDay = pickedDate;
       });
     }
   }
@@ -168,67 +172,60 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  // 특정 날짜를 탭했을 때 해당 날짜의 메모 및 입금/지출 내역을 불러와 표시하는 함수
+  // 날짜를 탭했을 때 띄울 내역 및 메모 목록
   void showScheduleList(BuildContext context) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          content: FutureBuilder<QuerySnapshot>( // 비동기 작업을 Build
-            future: FirebaseFirestore.instance.collection('transactions').get(), // 할 작업 : users 컬렉션 읽기
-
-            // AsyncSnapshot : 비동기 작업의 진행 상태와 결과 값을 저장.
-            // 여기서 AsyncSnapshot의 결과값은 비동기 작업(FutureBuilder)의 결과물인 QuerySnapshot.
-            builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              
-              // 비동기 작업의 진행 상태에 따라 서로 다른 UI 보여줌
+          content: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _fetchSchedules(),
+            builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                // 로딩 상태
                 return Center(child: CircularProgressIndicator());
               }
 
               if (snapshot.hasError) {
-                // 에러 상태
                 return Center(child: Text('오류가 발생했습니다.'));
               }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                // 데이터가 없을 때
-                return Center(child: Text('사용자 데이터가 없습니다.'));
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('해당 날짜에 데이터가 없습니다.'));
               }
 
-              // Firestore 문서 데이터를 UI로 변환
-              // QueryDocumentSnapshot은 문서 하나하나를 나타냄
-              final List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
-
-              return SingleChildScrollView( // 한 화면에 정보를 모두 띄우지 못할 경우 스크롤 가능
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-
-                  // map 함수는 각 docs의 각 항목(문서)을 순회.
-                  children: docs.map((doc) {
-                    // 각 문서의 정보를 <String, dynamic>의 Map 구조로 변환.
-                    final data = doc.data() as Map<String, dynamic>;
-
-                    // 각 문서의 정보를 하나의 컨테이너에 담아서 반환.
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: data.entries.map((entry) {
-                          return Text(
-                            '${entry.key}: ${entry.value}',
-                            style: const TextStyle(fontSize: 14),
-                          );
-                        }).toList(),
-                      ),
-                    );
-                  }).toList(),
+              final schedules = snapshot.data!;
+              return Container(
+                width: 50,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: schedules.map((schedule) {
+                      return Container(
+                        width: 300,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: schedule['color'],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(schedule['type'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text('날짜: ${schedule['date'].toString().substring(0, 10)}', style: TextStyle(fontSize: 14)),
+                            if (schedule['type'] == '입금 내역' || schedule['type'] == '지출 내역') ...[
+                              Text('장소: ${schedule['place']}', style: TextStyle(fontSize: 14)),
+                              Text('금액: ${schedule['price']}원', style: TextStyle(fontSize: 14)),
+                              Text('메모: ${schedule['memo']}', style: TextStyle(fontSize: 14)),
+                            ] else if (schedule['type'] == '일반 메모') ...[
+                              Text('내용: ${schedule['content']}', style: TextStyle(fontSize: 14)),
+                            ],
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               );
             },
@@ -236,6 +233,77 @@ class _CalendarPageState extends State<CalendarPage> {
         );
       },
     );
+  }
+
+  // 특정 날짜의 내역과 메모를 모두 가져와 정렬하는 함수
+  Future<List<Map<String, dynamic>>> _fetchSchedules() async {
+    final String userId = auth.currentUser?.email ?? '';
+
+    // 선택한 날짜의 시작과 끝 시간 계산 (UTC 기준)
+    final DateTime startOfDay = DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+    final DateTime endOfDay = startOfDay.add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
+
+    try {
+      // Firestore에서 transactions 데이터 가져오기
+      final QuerySnapshot transactionsSnapshot = await firestore
+          .collection('transactions')
+          .where('userId', isEqualTo: userId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .get();
+
+      // Firestore에서 memo 데이터 가져오기
+      final QuerySnapshot memoSnapshot = await firestore
+          .collection('memo')
+          .where('userId', isEqualTo: userId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay.toUtc()))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay.toUtc()))
+          .get();
+
+      // transactions 데이터 변환
+      final List<Map<String, dynamic>> transactions = transactionsSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return {
+          'type': data['isDeposit'] == true ? '입금 내역' : '지출 내역',
+          'date': (data['date'] as Timestamp).toDate().add(const Duration(hours: 9)), // UTC+9로 변환
+          'place': data['place'] ?? '정보 없음',
+          'price': data['price'] ?? 0,
+          'memo': data['memo'] ?? '메모 없음',
+          'color': data['isDeposit'] == true ? Colors.blue[100] : Colors.red[100],
+        };
+      }).toList();
+
+      // memo 데이터 변환
+      final List<Map<String, dynamic>> memos = memoSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return {
+          'type': '일반 메모',
+          'date': (data['date'] as Timestamp).toDate().add(const Duration(hours: 9)), // UTC+9로 변환
+          'content': data['memo'] ?? '메모 없음',
+          'color': Colors.orange[100],
+        };
+      }).toList();
+
+      // 모든 데이터를 합치고 날짜 기준으로 정렬
+      final List<Map<String, dynamic>> combined = [...transactions, ...memos];
+      combined.sort((a, b) {
+        final DateTime dateA = a['date'];
+        final DateTime dateB = b['date'];
+        return dateA.compareTo(dateB);
+      });
+
+      return combined;
+    } catch (e) {
+      print('Error fetching schedules: $e');
+      return [];
+    }
+  }
+
+
+
+
+  DateTime adjustToKoreanTimeZone(DateTime date) {
+    return date.add(const Duration(hours: 9));
   }
 
   // 입금 내역 추가 dialog
@@ -378,6 +446,9 @@ class _CalendarPageState extends State<CalendarPage> {
                       depositMemo.clear();
 
                       Navigator.of(context).pop();
+
+                      // 입금 내역이 추가되었다는 Toast 등장
+                      addDepositToast();
                     }
                   },
                   child: Text(
@@ -450,8 +521,11 @@ class _CalendarPageState extends State<CalendarPage> {
                         ),
                       ),
                       SizedBox(
-                        width: 80,
+                        width: 100,
                         child: DropdownButton(
+                          style: TextStyle(
+                            color: Colors.black,
+                          ),
                           isExpanded: true,
                           hint: Text("카테고리를 선택하세요."),
                           value: selectedCategory,
@@ -508,6 +582,9 @@ class _CalendarPageState extends State<CalendarPage> {
                       withdrawMemo.clear();
 
                       Navigator.of(context).pop();
+
+                      // 지출 내역이 추가되었다는 Toast 등장
+                      addWithdrawToast();
                     }
                   },
                   child: Text("확인"),
@@ -579,6 +656,9 @@ class _CalendarPageState extends State<CalendarPage> {
                         plainMemo.clear();
 
                         Navigator.of(context).pop();
+
+                        // 메모가 추가되었다는 Toast 등장
+                        addMemoToast();
                       }
                     },
                     child: Text("확인"),
@@ -653,6 +733,36 @@ class _CalendarPageState extends State<CalendarPage> {
     Fluttertoast.showToast(
       backgroundColor: Colors.red,
       msg: '에러 발생',
+      gravity: ToastGravity.BOTTOM,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
+  // 입금 내역을 추가했을 때 띄울 Toast 함수
+  void addDepositToast() {
+    Fluttertoast.showToast(
+      backgroundColor: Colors.green,
+      msg: '입금 내역이 추가되었습니다!',
+      gravity: ToastGravity.BOTTOM,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
+  // 지출 내역을 추가했을 때 띄울 Toast 함수
+  void addWithdrawToast() {
+    Fluttertoast.showToast(
+      backgroundColor: Colors.green,
+      msg: '지출 내역이 추가되었습니다!',
+      gravity: ToastGravity.BOTTOM,
+      toastLength: Toast.LENGTH_SHORT,
+    );
+  }
+
+  // 메모를 추가했을 때 띄울 Toast 함수
+  void addMemoToast() {
+    Fluttertoast.showToast(
+      backgroundColor: Colors.green,
+      msg: '메모가 추가되었습니다!',
       gravity: ToastGravity.BOTTOM,
       toastLength: Toast.LENGTH_SHORT,
     );
