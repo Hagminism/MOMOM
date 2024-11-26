@@ -230,20 +230,20 @@ void showAccountSettingsDialog(BuildContext context) {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ElevatedButton(
-              onPressed: () {
+            MenuItem(
+              text: "이름 변경",
+              onTap: () {
                 Navigator.of(context).pop();
                 showChangeNameDialog(context);
               },
-              child: Text("이름 변경"),
             ),
             SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
+            MenuItem(
+              text: "비밀번호 변경",
+              onTap: () {
                 Navigator.of(context).pop();
                 showChangePasswordDialog(context);
               },
-              child: Text("비밀번호 변경"),
             ),
           ],
         ),
@@ -252,7 +252,7 @@ void showAccountSettingsDialog(BuildContext context) {
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text("취소"),
+            child: Text("닫기"),
           ),
         ],
       );
