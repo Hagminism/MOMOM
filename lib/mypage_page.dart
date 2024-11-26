@@ -155,6 +155,7 @@ class MenuItem extends StatelessWidget {
 
 void showBudgetDialog(BuildContext context) {
   TextEditingController budgetController = TextEditingController();
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -162,7 +163,10 @@ void showBudgetDialog(BuildContext context) {
         title: Text("월 예산 설정"),
         content: TextField(
           controller: budgetController,
-          decoration: InputDecoration(labelText: "월 예산"),
+          decoration: InputDecoration(
+            labelText: "월 예산",
+            hintText: "숫자만 입력해주세요",
+          ),
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly, // 숫자만 입력 허용
@@ -177,18 +181,35 @@ void showBudgetDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () async {
-              int? budget = int.tryParse(budgetController.text);
-              if (budget != null) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(auth.currentUser?.uid)
-                      .update({'monthly_budget': budget});
-                  Fluttertoast.showToast(msg: "월 예산이 설정되었습니다.");
-                } catch (e) {
-                  Fluttertoast.showToast(msg: "월 예산 설정에 실패했습니다: $e");
-                }
+              String input = budgetController.text.trim();
+              int? budget = int.tryParse(input);
+
+              if (budget == null || budget < 0) {
+                Fluttertoast.showToast(
+                  msg: "유효한 월 예산 금액을 입력해주세요.",
+                  gravity: ToastGravity.BOTTOM,
+                );
+                return;
               }
+
+              try {
+                // Firestore 업데이트
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(auth.currentUser?.uid)
+                    .update({'monthly_budget': budget});
+
+                Fluttertoast.showToast(
+                  msg: "월 예산이 성공적으로 설정되었습니다!",
+                  gravity: ToastGravity.BOTTOM,
+                );
+              } catch (e) {
+                Fluttertoast.showToast(
+                  msg: "월 예산 설정에 실패했습니다. 오류: $e",
+                  gravity: ToastGravity.BOTTOM,
+                );
+              }
+
               Navigator.of(context).pop();
             },
             child: Text("확인"),
@@ -198,6 +219,7 @@ void showBudgetDialog(BuildContext context) {
     },
   );
 }
+
 
 void showAccountSettingsDialog(BuildContext context) {
   showDialog(
