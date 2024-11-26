@@ -39,9 +39,11 @@ class MyPageScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: NetworkImage(
-                        userData['profile_image'] ??
-                            "https://via.placeholder.com/150", // 프로필 이미지 URL
+                      backgroundColor: Colors.grey[200], // 기본 배경색
+                      child: Icon(
+                        Icons.person, // 기본 아이콘
+                        size: 40,
+                        color: Colors.grey, // 아이콘 색상
                       ),
                     ),
                     SizedBox(height: 10),
