@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 enum CategoryType {
+  NOCATEGORY,
   TRANSPORT,                  //교통비
   FOOD,                       //식비
   CAFE,                       //카페, 간식
@@ -21,6 +21,8 @@ enum CategoryType {
 extension ParseToCategoryType on CategoryType {
   String get categoryName {
     switch (this) {
+      case CategoryType.NOCATEGORY:
+        return '카테고리 없음';
       case CategoryType.TRANSPORT:
         return '교통비';
       case CategoryType.FOOD:
@@ -57,6 +59,8 @@ extension ParseToCategoryType on CategoryType {
 
   Color get backgroundColor {
     switch (this) {
+      case CategoryType.NOCATEGORY:
+        return const Color.fromARGB(255, 94, 99, 66);
       case CategoryType.TRANSPORT:
         return const Color.fromARGB(255, 0, 71, 254);
       case CategoryType.FOOD:
@@ -95,6 +99,8 @@ extension ParseToCategoryType on CategoryType {
 
   IconData get icon{
     switch(this){
+      case CategoryType.NOCATEGORY:
+        return Icons.no_adult_content;
       case CategoryType.TRANSPORT:
         return Icons.train;
       case CategoryType.FOOD:
