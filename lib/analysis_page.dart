@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class AnalysisPage extends StatefulWidget {
   final String userId;
@@ -50,8 +49,34 @@ class _AnalysisPageState extends State<AnalysisPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('소비 분석',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '소비 분석',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
+            ),
+            FutureBuilder<double>(
+              future: _dataService.getTotalSpentThisMonth(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator(); // 로딩 중 표시
+                }
+                if (snapshot.hasError) {
+                  return const Text('데이터 없음'); // 에러 처리
+                }
+                final totalSpent = snapshot.data ?? 0;
+                return Text(
+                  '이번달에 ${totalSpent.toStringAsFixed(0)}원 썻어요~~',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
       ),
@@ -91,7 +116,8 @@ class _AnalysisPageState extends State<AnalysisPage> {
           final isSelected = _tabIndex == entry.key;
           return ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: isSelected ? Colors.white : Colors.black87, backgroundColor: isSelected ? Colors.blue : Colors.grey[200],
+              foregroundColor: isSelected ? Colors.white : Colors.black87,
+              backgroundColor: isSelected ? Colors.blue : Colors.grey[200],
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () => setState(() => _tabIndex = entry.key),
@@ -110,25 +136,15 @@ class DataService {
 
   DataService({required this.userId}) {
     chartData = ChartDataModel();
-    print('DataService initialized for user: $userId');
   }
 
   Future<void> fetchFirestoreData() async {
     try {
-      // 기본 쿼리
       final snapshot = await _firestore
           .collection('transactions')
           .where('userId', isEqualTo: userId)
           .get();
 
-      print('Retrieved ${snapshot.docs.length} transactions');
-
-      if (snapshot.docs.isEmpty) {
-        print('No transactions found for user: $userId');
-        return;
-      }
-
-      // 데이터 처리를 위한 맵 초기화
       final Map<int, double> monthlyTotals = {};
       final Map<int, double> weeklyTotals = {};
       final Map<int, double> dailyTotals = {};
@@ -138,37 +154,49 @@ class DataService {
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final date = (data['date'] as Timestamp).toDate();
-        final price = (data['price'] as num).toDouble(); // price 필드 가져오기
+        final price = (data['price'] as num).toDouble();
 
-        // 월별 데이터 처리
         final monthDiff = (now.year - date.year) * 12 + (now.month - date.month);
         if (monthDiff <= 6) {
           final monthIndex = 6 - monthDiff;
           monthlyTotals[monthIndex] = (monthlyTotals[monthIndex] ?? 0) + price;
         }
 
-        // 이번 달 데이터만 주별/일별로 처리
         if (date.month == now.month && date.year == now.year) {
-          // 주별 데이터
           final weekOfMonth = ((date.day - 1) ~/ 7);
           weeklyTotals[weekOfMonth] = (weeklyTotals[weekOfMonth] ?? 0) + price;
 
-          // 일별 데이터
-          final dayIndex = date.weekday - 1; // 월요일이 0
+          final dayIndex = date.weekday - 1;
           dailyTotals[dayIndex] = (dailyTotals[dayIndex] ?? 0) + price;
         }
       }
 
-      print('Data processed - Monthly totals: $monthlyTotals');
-      print('Weekly totals: $weeklyTotals');
-      print('Daily totals: $dailyTotals');
-
       chartData.updateData(monthlyTotals, weeklyTotals, dailyTotals);
-
     } catch (e) {
-      print('Error fetching transaction data: $e');
       rethrow;
     }
+  }
+
+  Future<double> getTotalSpentThisMonth() async {
+    final now = DateTime.now();
+    double totalSpent = 0;
+
+    final snapshot = await _firestore
+        .collection('transactions')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final date = (data['date'] as Timestamp).toDate();
+      final price = (data['price'] as num).toDouble();
+
+      if (date.year == now.year && date.month == now.month) {
+        totalSpent += price;
+      }
+    }
+
+    return totalSpent;
   }
 }
 
@@ -176,9 +204,9 @@ class ChartDataModel {
   List<List<double>> data = [];
   List<List<String>> labels = [];
 
-  static const int MONTH_COUNT = 7; // 현재 달 포함 7개월
-  static const int WEEK_COUNT = 5; // 한 달의 주 수
-  static const int DAY_COUNT = 7; // 일주일
+  static const int MONTH_COUNT = 7;
+  static const int WEEK_COUNT = 5;
+  static const int DAY_COUNT = 7;
 
   ChartDataModel() {
     initializeLabels();
@@ -186,18 +214,16 @@ class ChartDataModel {
   }
 
   void _initializeData() {
-    // 각 기간별 데이터 배열 초기화
     data = [
-      List.filled(MONTH_COUNT, 0), // 월별
-      List.filled(WEEK_COUNT, 0),  // 주별
-      List.filled(DAY_COUNT, 0),   // 일별
+      List.filled(MONTH_COUNT, 0),
+      List.filled(WEEK_COUNT, 0),
+      List.filled(DAY_COUNT, 0),
     ];
   }
 
   void initializeLabels() {
     final now = DateTime.now();
 
-    // 월 라벨 생성 (최근 6개월 + 현재 월)
     final monthLabels = List.generate(MONTH_COUNT, (i) {
       final month = (now.month - (6 - i) + 11) % 12 + 1;
       return '$month월';
@@ -211,7 +237,6 @@ class ChartDataModel {
   }
 
   void updateData(Map<int, double> monthlyTotals, Map<int, double> weeklyTotals, Map<int, double> dailyTotals) {
-    // 데이터 업데이트
     data[0] = List.generate(MONTH_COUNT, (i) => monthlyTotals[i] ?? 0);
     data[1] = List.generate(WEEK_COUNT, (i) => weeklyTotals[i] ?? 0);
     data[2] = List.generate(DAY_COUNT, (i) => dailyTotals[i] ?? 0);
@@ -237,10 +262,14 @@ class ChartWidget extends StatelessWidget {
     final maxY = _calculateMaxY();
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: chartType == ChartType.line
-          ? _buildLineChart(maxY)
-          : _buildBarChart(maxY),
+      padding: const EdgeInsets.only(left: 0.0, right: 19.0, top: 8.0, bottom: 8.0),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.4,
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: chartType == ChartType.line
+            ? _buildLineChart(maxY)
+            : _buildBarChart(maxY),
+      ),
     );
   }
 
@@ -270,19 +299,26 @@ class ChartWidget extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            curveSmoothness: 0.2,
-            colors: const [Colors.blue],
+            colors: const [Colors.red],
             barWidth: 4,
             dotData: FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              colors: [Colors.blue.withOpacity(0.3)],
+              colors: [Colors.red.withOpacity(0.3)],
             ),
           ),
         ],
         titlesData: _buildTitlesData(maxY),
         gridData: _buildGridData(maxY),
-        borderData: FlBorderData(show: true),
+        borderData: FlBorderData(
+          show: true,
+          border: const Border(
+            top: BorderSide(color: Colors.black),
+            bottom: BorderSide(color: Colors.black),
+            left: BorderSide(color: Colors.black),
+            right: BorderSide(color: Colors.black),
+          ),
+        ),
       ),
     );
   }
@@ -316,29 +352,33 @@ class ChartWidget extends StatelessWidget {
         barGroups: barGroups,
         titlesData: _buildTitlesData(maxY),
         gridData: _buildGridData(maxY),
-        borderData: FlBorderData(show: true),
+        borderData: FlBorderData(
+          show: true,
+          border: const Border(
+            top: BorderSide(color: Colors.black),
+            bottom: BorderSide(color: Colors.black),
+            left: BorderSide(color: Colors.black),
+            right: BorderSide(color: Colors.black),
+          ),
+        ),
       ),
     );
   }
 
   FlTitlesData _buildTitlesData(double maxY) {
+    final labels = chartData.labels[tabIndex];
+
     return FlTitlesData(
-      bottomTitles: SideTitles(
-        showTitles: true,
-        getTitles: (value) {
-          final index = value.toInt();
-          final labels = chartData.labels[tabIndex];
-          return index < labels.length ? labels[index] : '';
-        },
-        margin: 10,
-        reservedSize: tabIndex == 1 ? 30 : 22,
-      ),
       leftTitles: SideTitles(
         showTitles: true,
-        margin: 10,
-        reservedSize: 60,
-        interval: maxY > 0 ? maxY / 5 : 20000,
-        getTitles: (value) => '${(value / 10000).toStringAsFixed(0)}만원',
+        getTitles: (value) => '${value ~/ 10000}만원',
+        reservedSize: 48,
+        interval: 50000,
+      ),
+      bottomTitles: SideTitles(
+        showTitles: true,
+        getTitles: (value) => labels[value.toInt()],
+        reservedSize: 32,
       ),
     );
   }
@@ -346,12 +386,7 @@ class ChartWidget extends StatelessWidget {
   FlGridData _buildGridData(double maxY) {
     return FlGridData(
       show: true,
-      drawHorizontalLine: true,
-      horizontalInterval: maxY > 0 ? maxY / 5 : 20000,
-      getDrawingHorizontalLine: (value) => FlLine(
-        color: Colors.grey.withOpacity(0.3),
-        strokeWidth: 1,
-      ),
+      horizontalInterval: 50000,
     );
   }
 }
