@@ -51,7 +51,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         .collection('transactions')
         .where('userId', isEqualTo: widget.userId)
         .where('category', isEqualTo: widget.categoryType)
-        .where('isDeposit',isEqualTo:false)
+        //.where('isDeposit',isEqualTo:false)
         .where('date', isGreaterThanOrEqualTo: startDate)
         .where('date', isLessThan: endDate)
         .orderBy('date', descending: true)
