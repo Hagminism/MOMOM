@@ -194,7 +194,7 @@ class _CalendarPageState extends State<CalendarPage> {
               }
 
               final schedules = snapshot.data!;
-              return Container(
+              return SizedBox(
                 width: 50,
                 child: SingleChildScrollView(
                   child: Column(
@@ -208,20 +208,40 @@ class _CalendarPageState extends State<CalendarPage> {
                           color: schedule['color'],
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(schedule['type'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text('날짜: ${schedule['date'].toString().substring(0, 10)}', style: TextStyle(fontSize: 14)),
-                            if (schedule['type'] == '입금 내역' || schedule['type'] == '지출 내역') ...[
-                              Text('장소: ${schedule['place']}', style: TextStyle(fontSize: 14)),
-                              Text('금액: ${schedule['price']}원', style: TextStyle(fontSize: 14)),
-                              Text('메모: ${schedule['memo']}', style: TextStyle(fontSize: 14)),
-                            ] else if (schedule['type'] == '일반 메모') ...[
-                              Text('내용: ${schedule['content']}', style: TextStyle(fontSize: 14)),
-                            ],
-                          ],
+                        child: InkWell(
+                          onTap: () {
+                            if (schedule['type'] == '입금 내역') {
+                              showEditDepositDialog(context, schedule);
+                            } else if (schedule['type'] == '지출 내역') {
+                              showEditWithdrawDialog(context, schedule);
+                            } else if (schedule['type'] == '일반 메모') {
+                              showEditMemoDialog(context, schedule);
+                            }
+                          },
+                          child: Container(
+                            width: 300,
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: schedule['color'],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(schedule['type'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                SizedBox(height: 4),
+                                Text('날짜: ${schedule['date'].toString().substring(0, 10)}', style: TextStyle(fontSize: 14)),
+                                if (schedule['type'] == '입금 내역' || schedule['type'] == '지출 내역') ...[
+                                  Text('장소: ${schedule['place']}', style: TextStyle(fontSize: 14)),
+                                  Text('금액: ${schedule['price']}원', style: TextStyle(fontSize: 14)),
+                                  Text('메모: ${schedule['memo']}', style: TextStyle(fontSize: 14)),
+                                ] else if (schedule['type'] == '일반 메모') ...[
+                                  Text('내용: ${schedule['content']}', style: TextStyle(fontSize: 14)),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -234,6 +254,317 @@ class _CalendarPageState extends State<CalendarPage> {
       },
     );
   }
+
+  void showEditDepositDialog(BuildContext context, Map<String, dynamic> schedule) {
+    depositPlace.text = schedule['place'];
+    depositMoney.text = schedule['price'].toString();
+    depositMemo.text = schedule['memo'];
+
+    // 기존 카테고리를 불러와 초기값으로 설정
+    selectedCategory = category.firstWhere((e) => e.categoryName == schedule['category'], orElse: () => category[0]);
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text("입금 내역 수정"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: depositPlace,
+                    decoration: const InputDecoration(
+                      labelText: "입금처",
+                      hintText: "입금처",
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: depositMoney,
+                    decoration: const InputDecoration(
+                      labelText: "입금 금액",
+                      hintText: "입금 금액",
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    maxLines: 2,
+                    controller: depositMemo,
+                    decoration: const InputDecoration(
+                      labelText: "메모",
+                      hintText: "메모",
+                    ),
+                    keyboardType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("카테고리 선택", style: TextStyle(fontSize: 15)),
+                      DropdownButton<CategoryType>(
+                        value: selectedCategory,
+                        items: category.map((e) {
+                          return DropdownMenuItem<CategoryType>(
+                            value: e,
+                            child: Text(e.categoryName),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedCategory = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    depositPlace.clear();
+                    depositMoney.clear();
+                    depositMemo.clear();
+                  },
+                  child: Text("취소"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (depositPlace.text.isEmpty || depositMoney.text.isEmpty || depositMemo.text.isEmpty) {
+                      cannotSendFirebaseToast();
+                    } else {
+                      updateDeposit(schedule['id']);
+                      Navigator.of(context).pop();
+                      depositPlace.clear();
+                      depositMoney.clear();
+                      depositMemo.clear();
+                    }
+                  },
+                  child: Text("수정"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+  void showEditWithdrawDialog(BuildContext context, Map<String, dynamic> schedule) {
+    withdrawPlace.text = schedule['place'];
+    withdrawMoney.text = schedule['price'].toString();
+    withdrawMemo.text = schedule['memo'];
+
+    // 기존 카테고리를 불러와 초기값으로 설정
+    selectedCategory = category.firstWhere((e) => e.categoryName == schedule['category'], orElse: () => category[0]);
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text("지출 내역 수정"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: withdrawPlace,
+                    decoration: const InputDecoration(
+                      labelText: "지출처",
+                      hintText: "지출처",
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: withdrawMoney,
+                    decoration: const InputDecoration(
+                      labelText: "지출 금액",
+                      hintText: "지출 금액",
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    maxLines: 2,
+                    controller: withdrawMemo,
+                    decoration: const InputDecoration(
+                      labelText: "메모",
+                      hintText: "메모",
+                    ),
+                    keyboardType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("카테고리 선택", style: TextStyle(fontSize: 15)),
+                      DropdownButton<CategoryType>(
+                        value: selectedCategory,
+                        items: category.map((e) {
+                          return DropdownMenuItem<CategoryType>(
+                            value: e,
+                            child: Text(e.categoryName),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedCategory = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    withdrawPlace.clear();
+                    withdrawMoney.clear();
+                    withdrawMemo.clear();
+                  },
+                  child: Text("취소"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (withdrawPlace.text.isEmpty || withdrawMoney.text.isEmpty || withdrawMemo.text.isEmpty) {
+                      cannotSendFirebaseToast();
+                    } else {
+                      updateWithdraw(schedule['id']);
+                      Navigator.of(context).pop();
+                      withdrawPlace.clear();
+                      withdrawMoney.clear();
+                      withdrawMemo.clear();
+                    }
+                  },
+                  child: Text("수정"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+  void showEditMemoDialog(BuildContext context, Map<String, dynamic> schedule) {
+    plainMemo.text = schedule['content']; // 일반 메모의 내용 불러오기
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("일반 메모 수정"),
+          content: TextField(
+            maxLines: 5,
+            controller: plainMemo,
+            decoration: const InputDecoration(
+              labelText: "메모",
+              hintText: "메모를 입력하세요",
+            ),
+            keyboardType: TextInputType.text,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                plainMemo.clear();
+              },
+              child: Text("취소"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (plainMemo.text == "") {
+                  cannotSendFirebaseToast();
+                } else {
+                  updateMemo(schedule['id']); // 메모 수정 함수 호출
+                  Navigator.of(context).pop();
+                  plainMemo.clear();
+                }
+              },
+              child: Text("수정"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  void updateDeposit(String id) async {
+    try {
+      await firestore.collection('transactions').doc(id).update({
+        'place': depositPlace.text,
+        'price': int.parse(depositMoney.text),
+        'memo': depositMemo.text,
+        'category': selectedCategory.categoryName, // 수정된 카테고리 저장
+      });
+      Fluttertoast.showToast(
+        backgroundColor: Colors.green,
+        msg: '입금 내역이 수정되었습니다!',
+        gravity: ToastGravity.BOTTOM,
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    } catch (e) {
+      sendErrorToast();
+    }
+  }
+
+
+  void updateWithdraw(String id) async {
+    try {
+      await firestore.collection('transactions').doc(id).update({
+        'place': withdrawPlace.text,
+        'price': int.parse(withdrawMoney.text),
+        'memo': withdrawMemo.text,
+        'category': selectedCategory.categoryName, // 수정된 카테고리 저장
+      });
+      Fluttertoast.showToast(
+        backgroundColor: Colors.green,
+        msg: '지출 내역이 수정되었습니다!',
+        gravity: ToastGravity.BOTTOM,
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    } catch (e) {
+      sendErrorToast();
+    }
+  }
+
+
+  void updateMemo(String id) async {
+    try {
+      await firestore.collection('memo').doc(id).update({
+        'memo': plainMemo.text, // 올바른 필드 이름으로 수정
+      });
+      Fluttertoast.showToast(
+        backgroundColor: Colors.green,
+        msg: '메모가 수정되었습니다!',
+        gravity: ToastGravity.BOTTOM,
+        toastLength: Toast.LENGTH_SHORT,
+      );
+    } catch (e) {
+      sendErrorToast();
+    }
+  }
+
+
 
   // 특정 날짜의 내역과 메모를 모두 가져와 정렬하는 함수
   Future<List<Map<String, dynamic>>> _fetchSchedules() async {
@@ -264,6 +595,7 @@ class _CalendarPageState extends State<CalendarPage> {
       final List<Map<String, dynamic>> transactions = transactionsSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return {
+          'id': doc.id, // 문서 ID 추가
           'type': data['isDeposit'] == true ? '입금 내역' : '지출 내역',
           'date': (data['date'] as Timestamp).toDate().add(const Duration(hours: 9)), // UTC+9로 변환
           'place': data['place'] ?? '정보 없음',
@@ -277,6 +609,7 @@ class _CalendarPageState extends State<CalendarPage> {
       final List<Map<String, dynamic>> memos = memoSnapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         return {
+          'id': doc.id, // 문서 ID 추가
           'type': '일반 메모',
           'date': (data['date'] as Timestamp).toDate().add(const Duration(hours: 9)), // UTC+9로 변환
           'content': data['memo'] ?? '메모 없음',
@@ -299,9 +632,6 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
-
-
-
   DateTime adjustToKoreanTimeZone(DateTime date) {
     return date.add(const Duration(hours: 9));
   }
@@ -309,6 +639,7 @@ class _CalendarPageState extends State<CalendarPage> {
   // 입금 내역 추가 dialog
   void showDepositDialog(BuildContext context, DateTime selectedDay) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder( // 카테고리 선택시 변동 사항이 즉시 반영되도록 StatefulBuilder 사용.
@@ -468,6 +799,7 @@ class _CalendarPageState extends State<CalendarPage> {
   // 지출 내역 추가 dialog
   void showWithdrawDialog(BuildContext context, DateTime selectedDay) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder( // 카테고리 선택시 변동 사항이 즉시 반영되도록 StatefulBuilder 사용.
@@ -599,6 +931,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
   void showAddMemoDialog(BuildContext context, DateTime selectedDay) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder( // 카테고리 선택시 변동 사항이 즉시 반영되도록 StatefulBuilder 사용.

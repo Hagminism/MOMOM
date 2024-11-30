@@ -109,6 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // 회원가입을 성공했을 때 띄울 Toast 함수
   void registerSuccessedToast() {
     Fluttertoast.showToast(
+      backgroundColor: Colors.green,
       msg: '회원가입이 완료되었습니다!',
       gravity: ToastGravity.BOTTOM,
       toastLength: Toast.LENGTH_SHORT,

@@ -51,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
             backgroundColor: Colors.red,
             content: Container(
                 height: 40.0,
-                child: Text(e.message!))));
+                child: Text("입력된 정보를 다시 확인하세요!"))));
     } catch (e) {
       print(e);
     }
