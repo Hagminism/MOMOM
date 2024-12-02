@@ -67,7 +67,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
                 }
                 final totalSpent = snapshot.data ?? 0;
                 return Text(
-                  '이번달에 ${totalSpent.toStringAsFixed(0)}원 썼어요~~',
+                  '이번달에 총 ${totalSpent.toStringAsFixed(0)}원 썻어요!!',
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w500,
@@ -143,6 +143,7 @@ class DataService {
       final snapshot = await _firestore
           .collection('transactions')
           .where('userId', isEqualTo: userId)
+          .where('isDeposit', isEqualTo: false)
           .get();
 
       final Map<int, double> monthlyTotals = {};
@@ -184,7 +185,7 @@ class DataService {
     final snapshot = await _firestore
         .collection('transactions')
         .where('userId', isEqualTo: userId)
-        .where('isDeposit', isEqualTo: false) // 지출 내역만 포함하도록 수정
+        .where('isDeposit', isEqualTo: false)
         .get();
 
     for (var doc in snapshot.docs) {
