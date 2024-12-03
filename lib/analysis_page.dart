@@ -56,20 +56,27 @@ class _AnalysisPageState extends State<AnalysisPage> {
               '소비 분석',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
             ),
-            FutureBuilder<double>(
-              future: _dataService.getTotalSpentThisMonth(),
+            FutureBuilder<List<double>>(
+              future: Future.wait([
+                _dataService.getMonthlyBudget(), // 예산 가져오기
+                _dataService.getTotalSpentThisMonth(), // 이번 달 사용 금액 가져오기
+              ]),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator(); // 로딩 중 표시
+                  return const CircularProgressIndicator(); // 로딩 표시
                 }
                 if (snapshot.hasError) {
                   return const Text('데이터 없음'); // 에러 처리
                 }
-                final totalSpent = snapshot.data ?? 0;
+
+                final budget = snapshot.data?[0] ?? 1; // 예산 (0 방지)
+                final spent = snapshot.data?[1] ?? 0; // 사용 금액
+                final percentage = (spent / budget * 100).clamp(0, 100); // 퍼센트 계산
+
                 return Text(
-                  '이번달에 총 ${totalSpent.toStringAsFixed(0)}원 썻어요!!',
+                  '이번달엔 설정한 예산의 ${percentage.toStringAsFixed(1)}%를 사용하셨어요!',
                   style: const TextStyle(
-                    fontSize: 17,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 );
@@ -80,6 +87,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
       ),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -138,6 +146,25 @@ class DataService {
     chartData = ChartDataModel();
   }
 
+  Future<double> getMonthlyBudget() async {
+    try {
+      // 'users' 컬렉션에서 email 필드로 문서 가져오기
+      final snapshot = await _firestore.collection('users').where('email', isEqualTo: userId).get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        final budget = (data['monthly_budget'] as num?)?.toDouble() ?? 0.0;
+        debugPrint('Monthly budget: $budget');
+        return budget;
+      } else {
+        return 0.0;
+      }
+    } catch (e) {
+      debugPrint('Error fetching monthly budget: $e');
+      return 0.0;
+    }
+  }
+
   Future<void> fetchFirestoreData() async {
     try {
       final snapshot = await _firestore
@@ -180,25 +207,32 @@ class DataService {
 
   Future<double> getTotalSpentThisMonth() async {
     final now = DateTime.now();
-    double totalSpent = 0;
+    double totalSpent = 0.0;
 
-    final snapshot = await _firestore
-        .collection('transactions')
-        .where('userId', isEqualTo: userId)
-        .where('isDeposit', isEqualTo: false)
-        .get();
+    try {
+      // 'transactions' 컬렉션에서 userId 기준으로 데이터 가져오기
+      final snapshot = await _firestore
+          .collection('transactions')
+          .where('userId', isEqualTo: userId)
+          .where('isDeposit', isEqualTo: false) // 지출 항목만 가져오기
+          .get();
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final date = (data['date'] as Timestamp).toDate();
-      final price = (data['price'] as num).toDouble();
+      // 현재 연도와 월에 해당하는 지출 금액 합산
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final date = (data['date'] as Timestamp).toDate();
+        final price = (data['price'] as num).toDouble();
 
-      if (date.year == now.year && date.month == now.month) {
-        totalSpent += price;
+        if (date.year == now.year && date.month == now.month) {
+          totalSpent += price;
+        }
       }
+      debugPrint('Total spent this month: $totalSpent');
+      return totalSpent;
+    } catch (e) {
+      debugPrint('Error fetching total spent this month: $e');
+      return 0.0;
     }
-
-    return totalSpent;
   }
 }
 
@@ -300,7 +334,7 @@ class ChartWidget extends StatelessWidget {
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            isCurved: true,
+            isCurved: false,
             colors: const [Colors.red],
             barWidth: 4,
             dotData: FlDotData(show: true),
