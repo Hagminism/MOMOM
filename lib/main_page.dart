@@ -24,7 +24,7 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     // userId를 CategoryPage에 전달
     _pages = [
-      CalendarPage(),
+      CalendarPage(userId: widget.userId),
       AnalysisPage(userId: widget.userId),
       CategoryPage(userId: widget.userId), // userId 전달
       MyPageScreen(), // 추가된 페이지

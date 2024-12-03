@@ -60,7 +60,7 @@ extension ParseToCategoryType on CategoryType {
   Color get backgroundColor {
     switch (this) {
       case CategoryType.NOCATEGORY:
-        return const Color.fromARGB(255, 94, 99, 66);
+        return const Color.fromARGB(255, 0, 0, 0);
       case CategoryType.TRANSPORT:
         return const Color.fromARGB(255, 0, 71, 254);
       case CategoryType.FOOD:

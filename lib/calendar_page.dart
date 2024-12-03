@@ -7,7 +7,8 @@ import 'package:newflutter/model/category_info.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarPage extends StatefulWidget {
-  const CalendarPage({super.key});
+  const CalendarPage({super.key, required this.userId});
+  final String userId;
 
   @override
   _CalendarPageState createState() => _CalendarPageState();
@@ -23,6 +24,93 @@ class _CalendarPageState extends State<CalendarPage> {
 
   final Map<DateTime, List<Color>> _markers = {}; // 날짜별 여러 마커를 저장
 
+  bool _isDataFetched=false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 데이터를 한 번만 가져오기 위해 플래그 사용
+    if (!_isDataFetched) {
+      _fetchMarkersFromFirestore();
+      _isDataFetched = true;
+    }
+  }
+
+  Future<void> _fetchMarkersFromFirestore() async {
+    try {
+      final transactionsSnapshot = await firestore
+          .collection('transactions')
+          .where('userId', isEqualTo: widget.userId)
+          .get();
+
+      for (var doc in transactionsSnapshot.docs) {
+        final data = doc.data();
+        final timestamp = data['date'] as Timestamp?;
+        final isDeposit = data['isDeposit'] as bool;
+        final memo = data['memo'] as String?;
+
+        if (timestamp != null) {
+          // 날짜를 UTC 형식으로 변환
+          final date = DateTime.utc(
+            timestamp.toDate().year,
+            timestamp.toDate().month,
+            timestamp.toDate().day,
+          );
+
+          // 기존 마커가 없는 경우 초기화
+          _markers[date] = _markers[date] ?? [];
+
+          // 입금 마커 추가 (초록색)
+          if (isDeposit && !_markers[date]!.contains(Colors.blue)) {
+            _markers[date]!.add(Colors.blue);
+          }
+
+          // 지출 마커 추가 (빨간색, 중복 방지)
+          if (!isDeposit && !_markers[date]!.contains(Colors.red)) {
+            _markers[date]!.add(Colors.red);
+          }
+        }
+      }
+
+      final memoSnapshot = await firestore
+      .collection('memo')
+      .where('userId',isEqualTo : widget.userId)
+      .get();
+
+      for (var doc in memoSnapshot.docs) {
+        final data = doc.data();
+        final timestamp = data['date'] as Timestamp?;
+        final memoContent = data['memo'] as String?;
+
+        if (timestamp != null && memoContent != null && memoContent.isNotEmpty) {
+          // 날짜를 UTC 형식으로 변환
+          final date = DateTime.utc(
+            timestamp.toDate().year,
+            timestamp.toDate().month,
+            timestamp.toDate().day,
+          );
+
+          // 기존 마커가 없는 경우 초기화
+          _markers[date] = _markers[date] ?? [];
+
+          // 메모 마커 추가 (노란색, 중복 방지)
+          if (!_markers[date]!.contains(Colors.yellow)) {
+            _markers[date]!.add(Colors.yellow);
+          }
+        }
+      }
+
+      // 상태 갱신
+      setState(() {
+        // UI 업데이트
+      });
+
+      print("Firestore 데이터 처리 완료: $_markers");
+    } catch (e) {
+      print('Error fetching markers: $e');
+    }
+  }
+
 
   // 입금처 & 입금 금액
   TextEditingController depositPlace = TextEditingController();
@@ -31,7 +119,7 @@ class _CalendarPageState extends State<CalendarPage> {
   // 지출처 & 지출 금액
   TextEditingController withdrawPlace = TextEditingController();
   TextEditingController withdrawMoney = TextEditingController();
-  
+
   // 메모
   TextEditingController depositMemo = TextEditingController();
   TextEditingController withdrawMemo = TextEditingController();
@@ -108,7 +196,7 @@ class _CalendarPageState extends State<CalendarPage> {
       ),
     );
   }
-  
+
   // DatePicker 팝업 함수
   void _showDatePicker(focusedDay) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -647,151 +735,151 @@ class _CalendarPageState extends State<CalendarPage> {
           // setState 사용시 마커가 다이얼로그 종료 후 찍히거나 카테고리 변동 사항이 늦게 반영되는 오류 발생.
           // 따라서 다이얼로그 위젯 외부에 작동하는 setState와 다이얼로그 내에서에 작동하는 dialogSetState를 구분,
           // 마커나 카테고리 변동이 다이얼로그의 라이프 사이클과 관계없이 적용되도록 함.
-          builder: (BuildContext context, StateSetter dialogSetState) {
-            return AlertDialog(
-              backgroundColor: Colors.black,
-              title: Text(
-                "입금 내역 추가",
-                style: TextStyle(
-                  color: Colors.white,
+            builder: (BuildContext context, StateSetter dialogSetState) {
+              return AlertDialog(
+                backgroundColor: Colors.black,
+                title: Text(
+                  "입금 내역 추가",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    style: TextStyle(
-                      color : Colors.white,
-                    ),
-                    controller: depositPlace,
-                    decoration: const InputDecoration(
-                      labelText: "입금처",
-                      hintText: "입금처",
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    style: TextStyle(
-                      color : Colors.white,
-                    ),
-                    controller: depositMoney,
-                    decoration: const InputDecoration(
-                      labelText: "입금 금액",
-                      hintText: "입금 금액",
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    style: TextStyle(
-                      color : Colors.white,
-                    ),
-                    maxLines: 2,
-                    controller: depositMemo,
-                    decoration: const InputDecoration(
-                      labelText: "메모",
-                      hintText: "메모",
-                    ),
-                    keyboardType: TextInputType.text,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "카테고리 선택",
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
-                        ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      style: TextStyle(
+                        color : Colors.white,
                       ),
-                      SizedBox(
-                        width: 100,
-                        child: DropdownButton(
-                          dropdownColor: Colors.black,
+                      controller: depositPlace,
+                      decoration: const InputDecoration(
+                        labelText: "입금처",
+                        hintText: "입금처",
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      style: TextStyle(
+                        color : Colors.white,
+                      ),
+                      controller: depositMoney,
+                      decoration: const InputDecoration(
+                        labelText: "입금 금액",
+                        hintText: "입금 금액",
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      style: TextStyle(
+                        color : Colors.white,
+                      ),
+                      maxLines: 2,
+                      controller: depositMemo,
+                      decoration: const InputDecoration(
+                        labelText: "메모",
+                        hintText: "메모",
+                      ),
+                      keyboardType: TextInputType.text,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "카테고리 선택",
                           style: TextStyle(
+                            fontSize: 15,
                             color: Colors.white,
                           ),
-                          isExpanded: true,
-                          hint: Text("카테고리를 선택하세요."),
-                          value: selectedCategory,
-                          items: category.map((e) => DropdownMenuItem(
-                            value: e,
-                            child: Text(e.categoryName),
-                          )).toList(),
-                          onChanged: (value) {
-                            dialogSetState(() {
-                              selectedCategory = value!;
-                            });
-                          },
                         ),
-                      )
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-
-                    // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
-                    depositPlace.clear();
-                    depositMoney.clear();
-                    depositMemo.clear();
-                  },
-                  child: Text(
-                    "취소",
-                    style: TextStyle(
-                      color: Colors.white,
+                        SizedBox(
+                          width: 100,
+                          child: DropdownButton(
+                            dropdownColor: Colors.black,
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                            isExpanded: true,
+                            hint: Text("카테고리를 선택하세요."),
+                            value: selectedCategory,
+                            items: category.map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e.categoryName),
+                            )).toList(),
+                            onChanged: (value) {
+                              dialogSetState(() {
+                                selectedCategory = value!;
+                              });
+                            },
+                          ),
+                        )
+                      ],
                     ),
-                  ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    if(depositPlace.text == "" || depositMoney.text == "" || depositMemo.text == "") {
-                      cannotSendFirebaseToast();
-                    }
-
-                    else {
-                      // 입금 내역 firebase firestore로 전송
-                      addDeposit();
-
-                      setState(() {
-
-                        // 선택된 날짜에 입금 내역이 없다면 마커 자리를 마련한 후 파란색 마커를 추가
-                        if (!_markers.containsKey(selectedDay)) {
-                          _markers[selectedDay] = [];
-                        }
-                        if (!_markers[selectedDay]!.contains(Colors.blue)) {
-                          _markers[selectedDay]!.add(Colors.blue);
-                        }
-                      });
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
 
                       // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
                       depositPlace.clear();
                       depositMoney.clear();
                       depositMemo.clear();
-
-                      Navigator.of(context).pop();
-
-                      // 입금 내역이 추가되었다는 Toast 등장
-                      addDepositToast();
-                    }
-                  },
-                  child: Text(
-                    "확인",
-                    style: TextStyle(
-                      color: Colors.white,
+                    },
+                    child: Text(
+                      "취소",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          });
+                  TextButton(
+                    onPressed: () {
+                      if(depositPlace.text == "" || depositMoney.text == "" || depositMemo.text == "") {
+                        cannotSendFirebaseToast();
+                      }
+
+                      else {
+                        // 입금 내역 firebase firestore로 전송
+                        addDeposit();
+
+                        setState(() {
+
+                          // 선택된 날짜에 입금 내역이 없다면 마커 자리를 마련한 후 파란색 마커를 추가
+                          if (!_markers.containsKey(selectedDay)) {
+                            _markers[selectedDay] = [];
+                          }
+                          if (!_markers[selectedDay]!.contains(Colors.blue)) {
+                            _markers[selectedDay]!.add(Colors.blue);
+                          }
+                        });
+
+                        // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
+                        depositPlace.clear();
+                        depositMoney.clear();
+                        depositMemo.clear();
+
+                        Navigator.of(context).pop();
+
+                        // 입금 내역이 추가되었다는 Toast 등장
+                        addDepositToast();
+                      }
+                    },
+                    child: Text(
+                      "확인",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            });
       },
     );
   }
@@ -807,123 +895,123 @@ class _CalendarPageState extends State<CalendarPage> {
           // setState 사용시 마커가 다이얼로그 종료 후 찍히거나 카테고리 변동 사항이 늦게 반영되는 오류 발생.
           // 따라서 다이얼로그 위젯 외부에 작동하는 setState와 다이얼로그 내에서에 작동하는 dialogSetState를 구분,
           // 마커나 카테고리 변동이 다이얼로그의 라이프 사이클과 관계없이 적용되도록 함.
-          builder: (BuildContext context, StateSetter dialogSetState) {
-            return AlertDialog(
-              title: Text("지출 내역 추가"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: withdrawPlace,
-                    decoration: const InputDecoration(
-                      labelText: "지출처",
-                      hintText: "지출처",
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: withdrawMoney,
-                    decoration: const InputDecoration(
-                      labelText: "지출 금액",
-                      hintText: "지출 금액",
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    maxLines: 2,
-                    controller: withdrawMemo,
-                    decoration: const InputDecoration(
-                      labelText: "메모",
-                      hintText: "메모",
-                    ),
-                    keyboardType: TextInputType.text,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "카테고리 선택",
-                        style: TextStyle(
-                          fontSize: 15,
-                        ),
+            builder: (BuildContext context, StateSetter dialogSetState) {
+              return AlertDialog(
+                title: Text("지출 내역 추가"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: withdrawPlace,
+                      decoration: const InputDecoration(
+                        labelText: "지출처",
+                        hintText: "지출처",
                       ),
-                      SizedBox(
-                        width: 100,
-                        child: DropdownButton(
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: withdrawMoney,
+                      decoration: const InputDecoration(
+                        labelText: "지출 금액",
+                        hintText: "지출 금액",
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      maxLines: 2,
+                      controller: withdrawMemo,
+                      decoration: const InputDecoration(
+                        labelText: "메모",
+                        hintText: "메모",
+                      ),
+                      keyboardType: TextInputType.text,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "카테고리 선택",
                           style: TextStyle(
-                            color: Colors.black,
+                            fontSize: 15,
                           ),
-                          isExpanded: true,
-                          hint: Text("카테고리를 선택하세요."),
-                          value: selectedCategory,
-                          items: category.map((e) => DropdownMenuItem(
-                            value: e,
-                            child: Text(e.categoryName),
-                          )).toList(),
-                          onChanged: (value) {
-                            dialogSetState(() {
-                              selectedCategory = value!;
-                            });
-                          },
                         ),
-                      )
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-
-                    // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
-                    withdrawPlace.clear();
-                    withdrawMoney.clear();
-                    withdrawMemo.clear();
-                  },
-                  child: Text("취소"),
+                        SizedBox(
+                          width: 100,
+                          child: DropdownButton(
+                            style: TextStyle(
+                              color: Colors.black,
+                            ),
+                            isExpanded: true,
+                            hint: Text("카테고리를 선택하세요."),
+                            value: selectedCategory,
+                            items: category.map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e.categoryName),
+                            )).toList(),
+                            onChanged: (value) {
+                              dialogSetState(() {
+                                selectedCategory = value!;
+                              });
+                            },
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    if(withdrawPlace.text == "" || withdrawMoney.text == "" || withdrawMemo.text == "") {
-                      cannotSendFirebaseToast();
-                    }
-
-                    else {
-                      // 지출 내역 firebase firestore로 전송
-                      addWithdraw();
-
-                      setState(() {
-                        // 선택된 날짜에 지출 내역이 없다면 마커 자리를 마련한 후 빨간색 마커를 추가
-                        if (!_markers.containsKey(selectedDay)) {
-                          _markers[selectedDay] = [];
-                        }
-                        if (!_markers[selectedDay]!.contains(Colors.red)) {
-                          _markers[selectedDay]!.add(Colors.red);
-                        }
-                      });
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
 
                       // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
                       withdrawPlace.clear();
                       withdrawMoney.clear();
                       withdrawMemo.clear();
+                    },
+                    child: Text("취소"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if(withdrawPlace.text == "" || withdrawMoney.text == "" || withdrawMemo.text == "") {
+                        cannotSendFirebaseToast();
+                      }
 
-                      Navigator.of(context).pop();
+                      else {
+                        // 지출 내역 firebase firestore로 전송
+                        addWithdraw();
 
-                      // 지출 내역이 추가되었다는 Toast 등장
-                      addWithdrawToast();
-                    }
-                  },
-                  child: Text("확인"),
-                ),
-              ],
-            );
-          }
+                        setState(() {
+                          // 선택된 날짜에 지출 내역이 없다면 마커 자리를 마련한 후 빨간색 마커를 추가
+                          if (!_markers.containsKey(selectedDay)) {
+                            _markers[selectedDay] = [];
+                          }
+                          if (!_markers[selectedDay]!.contains(Colors.red)) {
+                            _markers[selectedDay]!.add(Colors.red);
+                          }
+                        });
+
+                        // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
+                        withdrawPlace.clear();
+                        withdrawMoney.clear();
+                        withdrawMemo.clear();
+
+                        Navigator.of(context).pop();
+
+                        // 지출 내역이 추가되었다는 Toast 등장
+                        addWithdrawToast();
+                      }
+                    },
+                    child: Text("확인"),
+                  ),
+                ],
+              );
+            }
         );
       },
     );
@@ -972,17 +1060,13 @@ class _CalendarPageState extends State<CalendarPage> {
                         addMemo();
 
                         setState(() {
-                          // 메모의 마커 기능은 일단 보류.
-                          /*
-                          선택된 날짜에 지출 내역이 없다면 마커 자리를 마련한 후 빨간색 마커를 추가
                           if (!_markers.containsKey(selectedDay)) {
                             _markers[selectedDay] = [];
                           }
 
-                          if (!_markers[selectedDay]!.contains(Colors.red)) {
-                            _markers[selectedDay]!.add(Colors.red);
+                          if (!_markers[selectedDay]!.contains(Colors.yellow)) {
+                            _markers[selectedDay]!.add(Colors.yellow);
                           }
-                        */
                         });
 
                         // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함

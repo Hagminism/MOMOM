@@ -45,13 +45,11 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
       startDate.month + 1,
       1,
     );
-
     // Firestore에서 데이터 가져오기
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .collection('transactions')
         .where('userId', isEqualTo: widget.userId)
         .where('category', isEqualTo: widget.categoryType)
-        //.where('isDeposit',isEqualTo:false)
         .where('date', isGreaterThanOrEqualTo: startDate)
         .where('date', isLessThan: endDate)
         .orderBy('date', descending: true)
