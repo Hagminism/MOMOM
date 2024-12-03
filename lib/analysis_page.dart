@@ -71,15 +71,38 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
                 final budget = snapshot.data?[0] ?? 1; // 예산 (0 방지)
                 final spent = snapshot.data?[1] ?? 0; // 사용 금액
-                final percentage = (spent / budget * 100).clamp(0, 100); // 퍼센트 계산
+                final percentage = (spent / budget * 100).clamp(0, 150); // 퍼센트 계산
 
-                return Text(
-                  '이번달엔 설정한 예산의 ${percentage.toStringAsFixed(1)}%를 사용하셨어요!',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                );
+                // 디버그 출력
+                debugPrint('Budget: $budget');
+                debugPrint('Spent: $spent');
+                debugPrint('Percentage: ${percentage.toStringAsFixed(1)}%');
+
+                if (budget == 0) {
+                  return Text(
+                    '이번 달 총 ${spent.toString()}원을 사용했어요!!', // 사용한 금액을 포함
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                } else if (percentage > 100) {
+                  return const Text(
+                    '월 지출량이 월 예산 설정량을 넘었어요!',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                } else {
+                  return Text(
+                    '이번 달 설정 예산의 ${percentage.toStringAsFixed(1)}%를 사용했어요!',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -227,10 +250,8 @@ class DataService {
           totalSpent += price;
         }
       }
-      debugPrint('Total spent this month: $totalSpent');
       return totalSpent;
     } catch (e) {
-      debugPrint('Error fetching total spent this month: $e');
       return 0.0;
     }
   }
