@@ -113,11 +113,11 @@ class _CalendarPageState extends State<CalendarPage> {
 
 
   // 입금처 & 입금 금액
-  //TextEditingController depositPlace = TextEditingController();
+  TextEditingController depositPlace = TextEditingController();
   TextEditingController depositMoney = TextEditingController();
 
   // 지출처 & 지출 금액
-  //TextEditingController withdrawPlace = TextEditingController();
+  TextEditingController withdrawPlace = TextEditingController();
   TextEditingController withdrawMoney = TextEditingController();
 
   // 메모
@@ -321,8 +321,9 @@ class _CalendarPageState extends State<CalendarPage> {
                                 SizedBox(height: 4),
                                 Text('날짜: ${schedule['date'].toString().substring(0, 10)}', style: TextStyle(fontSize: 14)),
                                 if (schedule['type'] == '입금 내역' || schedule['type'] == '지출 내역') ...[
-                                  //Text('장소: ${schedule['place']}', style: TextStyle(fontSize: 14)),
+                                  Text('장소: ${schedule['place']}', style: TextStyle(fontSize: 14)),
                                   Text('금액: ${schedule['price']}원', style: TextStyle(fontSize: 14)),
+                                  Text('카테고리: ${schedule['category']}', style: TextStyle(fontSize: 14)),
                                   Text('메모: ${schedule['memo']}', style: TextStyle(fontSize: 14)),
                                 ] else if (schedule['type'] == '일반 메모') ...[
                                   Text('내용: ${schedule['content']}', style: TextStyle(fontSize: 14)),
@@ -344,7 +345,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   void showEditDepositDialog(BuildContext context, Map<String, dynamic> schedule) {
-    //depositPlace.text = schedule['place'];
+    depositPlace.text = schedule['place'];
     depositMoney.text = schedule['price'].toString();
     depositMemo.text = schedule['memo'];
 
@@ -362,6 +363,13 @@ class _CalendarPageState extends State<CalendarPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  TextField(
+                    controller: depositPlace,
+                    decoration: const InputDecoration(
+                      labelText: "입금처",
+                      hintText: "입금처",
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   TextField(
                     controller: depositMoney,
@@ -384,7 +392,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     ),
                     keyboardType: TextInputType.text,
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -412,6 +420,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   onPressed: () {
                     Navigator.of(context).pop();
 
+                    depositPlace.clear();
                     depositMoney.clear();
                     depositMemo.clear();
                   },
@@ -419,14 +428,17 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    if (depositMoney.text.isEmpty || depositMemo.text.isEmpty) {
+                    if (depositPlace.text.isEmpty || depositMoney.text.isEmpty || depositMemo.text.isEmpty) {
                       cannotSendFirebaseToast();
                     } else {
                       updateDeposit(schedule['id']);
                       Navigator.of(context).pop();
 
+                      depositPlace.clear();
                       depositMoney.clear();
                       depositMemo.clear();
+
+                      showScheduleList(context);
                     }
                   },
                   child: Text("수정"),
@@ -441,7 +453,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
 
   void showEditWithdrawDialog(BuildContext context, Map<String, dynamic> schedule) {
-    //withdrawPlace.text = schedule['place'];
+    withdrawPlace.text = schedule['place'];
     withdrawMoney.text = schedule['price'].toString();
     withdrawMemo.text = schedule['memo'];
 
@@ -459,6 +471,13 @@ class _CalendarPageState extends State<CalendarPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  TextField(
+                    controller: withdrawPlace,
+                    decoration: const InputDecoration(
+                      labelText: "지출처",
+                      hintText: "지출처",
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   TextField(
                     controller: withdrawMoney,
@@ -481,7 +500,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     ),
                     keyboardType: TextInputType.text,
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -509,6 +528,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   onPressed: () {
                     Navigator.of(context).pop();
 
+                    withdrawPlace.clear();
                     withdrawMoney.clear();
                     withdrawMemo.clear();
                   },
@@ -516,12 +536,13 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    if (withdrawMoney.text.isEmpty || withdrawMemo.text.isEmpty) {
+                    if (withdrawPlace.text.isEmpty || withdrawMoney.text.isEmpty || withdrawMemo.text.isEmpty) {
                       cannotSendFirebaseToast();
                     } else {
                       updateWithdraw(schedule['id']);
                       Navigator.of(context).pop();
 
+                      withdrawPlace.clear();
                       withdrawMoney.clear();
                       withdrawMemo.clear();
                     }
@@ -585,6 +606,7 @@ class _CalendarPageState extends State<CalendarPage> {
   void updateDeposit(String id) async {
     try {
       await firestore.collection('transactions').doc(id).update({
+        'place': depositPlace.text,
         'price': int.parse(depositMoney.text),
         'memo': depositMemo.text,
         'category': selectedCategory.categoryName, // 수정된 카테고리 저장
@@ -600,10 +622,10 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
-
   void updateWithdraw(String id) async {
     try {
       await firestore.collection('transactions').doc(id).update({
+        'place': withdrawPlace.text,
         'price': int.parse(withdrawMoney.text),
         'memo': withdrawMemo.text,
         'category': selectedCategory.categoryName, // 수정된 카테고리 저장
@@ -670,8 +692,10 @@ class _CalendarPageState extends State<CalendarPage> {
           'id': doc.id, // 문서 ID 추가
           'type': data['isDeposit'] == true ? '입금 내역' : '지출 내역',
           'date': (data['date'] as Timestamp).toDate().add(const Duration(hours: 9)), // UTC+9로 변환
+          'place': data['place'] ?? '정보 없음',
           'price': data['price'] ?? 0,
           'memo': data['memo'] ?? '메모 없음',
+          'category': data['category'] ?? '카테고리 없음',
           'color': data['isDeposit'] == true ? Colors.blue[100] : Colors.red[100],
         };
       }).toList();
@@ -729,6 +753,13 @@ class _CalendarPageState extends State<CalendarPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    TextField(
+                      controller: depositPlace,
+                      decoration: const InputDecoration(
+                        labelText: "입금처",
+                        hintText: "입금처",
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     TextField(
                       style: TextStyle(
@@ -753,7 +784,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                       keyboardType: TextInputType.text,
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -793,6 +824,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       Navigator.of(context).pop();
 
                       // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
+                      depositPlace.clear();
                       depositMoney.clear();
                       depositMemo.clear();
                     },
@@ -804,7 +836,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      if(depositMoney.text == "" || depositMemo.text == "") {
+                      if(depositPlace.text == "" || depositMoney.text == "" || depositMemo.text == "") {
                         cannotSendFirebaseToast();
                       }
 
@@ -824,6 +856,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         });
 
                         // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
+                        depositPlace.clear();
                         depositMoney.clear();
                         depositMemo.clear();
 
@@ -863,6 +896,13 @@ class _CalendarPageState extends State<CalendarPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    TextField(
+                      controller: withdrawPlace,
+                      decoration: const InputDecoration(
+                        labelText: "지출처",
+                        hintText: "지출처",
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     TextField(
                       controller: withdrawMoney,
@@ -885,7 +925,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                       keyboardType: TextInputType.text,
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -926,6 +966,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       Navigator.of(context).pop();
 
                       // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
+                      withdrawPlace.clear();
                       withdrawMoney.clear();
                       withdrawMemo.clear();
                     },
@@ -933,7 +974,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      if(withdrawMoney.text == "" || withdrawMemo.text == "") {
+                      if(withdrawPlace.text == "" || withdrawMoney.text == "" || withdrawMemo.text == "") {
                         cannotSendFirebaseToast();
                       }
 
@@ -952,6 +993,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         });
 
                         // 다이얼로그가 다시 팝업되었을 때 이전 값을 보여주지 않도록 함
+                        withdrawPlace.clear();
                         withdrawMoney.clear();
                         withdrawMemo.clear();
 
@@ -1049,6 +1091,7 @@ class _CalendarPageState extends State<CalendarPage> {
         'isDeposit': true,
         'date': Timestamp.fromDate(_selectedDay ?? DateTime.now()), // DateTime -> Timestamp 변환
         'category': selectedCategory.categoryName,
+        'place': depositPlace.text,
         'price': int.parse(depositMoney.text), // 문자열 -> 숫자 변환
         'memo': depositMemo.text,
         'userId': auth.currentUser?.email,
@@ -1065,6 +1108,7 @@ class _CalendarPageState extends State<CalendarPage> {
         'isDeposit': false,
         'date': Timestamp.fromDate(_selectedDay ?? DateTime.now()), // DateTime -> Timestamp 변환
         'category': selectedCategory.categoryName,
+        'place': withdrawPlace.text,
         'price': int.parse(withdrawMoney.text), // 문자열 -> 숫자 변환
         'memo': withdrawMemo.text,
         'userId': auth.currentUser?.email,
