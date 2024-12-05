@@ -1,17 +1,34 @@
-# newflutter
+# 고급모바일프로그래밍[7] 5조
 
-what about this?
-A new Flutter project.
+## 👨‍💻 팀원 소개
+이학민 (2091114)
 
-## Getting Started
+김준호 (2071011)
 
-This project is a starting point for a Flutter application.
+송원재 (2091034)
 
-A few resources to get you started if this is your first Flutter project:
+박윤제 (2091100)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 💻 프로젝트명 : MOMOM(My Own Money, My Own Management)
+![new_image2 (소형)](https://github.com/user-attachments/assets/b53a5c01-2d1c-4dc8-9d8c-71329d7d643c)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+💰 MOMOM은 메모 기능과 통계 및 시각화, 카테고리 분류 기능을 더한 복합적인 형태의 가계부 앱입니다. 💰
+
+## 🤔 문제 정의
+현 시대를 살아가는 약 5천만의 인구는 각자 다른 형태와 이유의 금전적 책임을 짊어지고 살아가고 있습니다.
+
+단순하게는 용돈부터 시작하여, 학업이나 일상 생활을 이어나가기 위한 생활비, 가족을 부양 하고 무언가를 책임지기 위한 비용 등 사회를 살아감에 있어 크고 작은 책임을 부여받게 됩니다.
+
+그러나 주변 환경의 문제로 제대로 된 재정 관리 교육을 받지 못하였거나, 올바른 소비 습관을 갖추지 못한 인원들에게는, 스스로가 정한 일정한 기준에서 적당 수준의 지출을 계획하거나 주어진 조건 속에서 최상의 소비를 하는 행위가 익숙하지 못한 상황입니다.
+
+따라서 보통의 경우 비효율적인 소비로 이어지는 경우가 대다수이며, 저희 5조는 이러한 상황이 개인이 사회의 일원이 되어 삶을 이어갈 때 분명 그들에게 문제가 될 것이라 판단했습니다.
+
+저희는 사용자들이 자산을 효율적으로 관리하고 미래의 재정적 안정을 위한 기초를 다질 수 있도록 돕는 도구가 부족한 상황임을 인식했습니다. 
+
+그리고 저희는 사용자들이 스스로의 재정 상황을 이해하고 계획할 수 있는 도구 중의 하나로서 가계부를 선택하게 되었습니다.
+
+## 🚀 목적
+사용자가 자신의 소비 습관을 파악하고 자산을 효율적으로 관리하는 시스템을 개발한다.
+
+## 🚀 목표
+사용자가 가계부 앱을 사용하여 능동적으로 스스로의 소비를 파악하며, 자산을 효율적으로 관리하고, 메모 기능을 사용하여 세부 지출 내역을 기록할 수 있게 하여 올바른 소비 습관을 가질 수 있도록 한다.
