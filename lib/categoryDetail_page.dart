@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../model/category_info.dart';
@@ -52,15 +54,18 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         .where('category', isEqualTo: widget.categoryType)
         .where('date', isGreaterThanOrEqualTo: startDate)
         .where('date', isLessThan: endDate)
+        .where('isDeposit', isEqualTo: false) // isDeposit이 true인 데이터만 가져오기
         .orderBy('date', descending: true)
         .get();
 
     setState(() {
       financeList = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>; // doc.data()를 Map으로 캐스팅
         return FinanceInfo(
           categoryType: category,
-          price: doc['price'],
-          date: (doc['date'] as Timestamp).toDate(), // 날짜 추가
+          price: data['price'], // 데이터 접근
+          date: (data['date'] as Timestamp).toDate(), // Timestamp를 DateTime으로 변환
+          place: data.containsKey('place') ? data['place'] : '페이먼트 장소', // place 속성 확인 후 기본값 설정
         );
       }).toList();
     });
@@ -208,12 +213,12 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '-${financeInfo.price} 원',
+                  '${financeInfo.price} 원',
                   style: const TextStyle(fontSize: 20, color: Colors.black),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '원래 페이먼트 장소 | 원래 페이먼트 방법',
+                  '${financeInfo.place}',
                   style: const TextStyle(fontSize: 18, color: Colors.grey),
                 ),
               ],
