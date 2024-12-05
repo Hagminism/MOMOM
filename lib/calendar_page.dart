@@ -129,6 +129,7 @@ class _CalendarPageState extends State<CalendarPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset:false,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -140,60 +141,62 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
         ),
       ),
-      body: TableCalendar(
-        locale: 'ko_KR',
-        rowHeight: 100,
-        firstDay: DateTime.utc(2010, 10, 16),
-        lastDay: DateTime.utc(2030, 3, 14),
-        focusedDay: _focusedDay,
-        headerStyle: HeaderStyle(
-          formatButtonVisible: false,
-          titleCentered: true,
-        ),
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-          showScheduleList(context);
-        },
-        onHeaderTapped: _showDatePicker,
-        onDayLongPressed: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-          showOptions(context, selectedDay);
-        },
-        calendarBuilders: CalendarBuilders(
-          markerBuilder: (context, day, _) {
-            // 캘린더에 마커 렌더링
-            if (_markers.containsKey(day)) {
-              return Positioned(
-                bottom: 8,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: _markers[day]!
-                      .map(
-                        (color) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  )
-                      .toList(),
-                ),
-              );
-            }
-            return null;
+      body: SingleChildScrollView(
+        child: TableCalendar(
+          locale: 'ko_KR',
+          rowHeight: 100,
+          firstDay: DateTime.utc(2010, 10, 16),
+          lastDay: DateTime.utc(2030, 3, 14),
+          focusedDay: _focusedDay,
+          headerStyle: HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
+          ),
+          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
+            showScheduleList(context);
           },
+          onHeaderTapped: _showDatePicker,
+          onDayLongPressed: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
+            showOptions(context, selectedDay);
+          },
+          calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, day, _) {
+              // 캘린더에 마커 렌더링
+              if (_markers.containsKey(day)) {
+                return Positioned(
+                  bottom: 8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _markers[day]!
+                        .map(
+                          (color) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    )
+                        .toList(),
+                  ),
+                );
+              }
+              return null;
+            },
+          ),
         ),
-      ),
+      )
     );
   }
 

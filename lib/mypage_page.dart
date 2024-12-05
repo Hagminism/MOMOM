@@ -11,6 +11,7 @@ class MyPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset:false,
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text("마이페이지", style: TextStyle(color: Colors.black)),
@@ -78,43 +79,45 @@ class MyPageScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // '나의 메뉴' 텍스트
-                    Text(
-                      "나의 메뉴",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 10),
-                    // 메뉴 버튼들
-                    MenuItem(
-                      text: "월 예산 설정",
-                      onTap: () {
-                        showBudgetDialog(context);
-                      },
-                    ),
-                    MenuItem(
-                      text: "계정 설정",
-                      onTap: () {
-                        showAccountSettingsDialog(context);
-                      },
-                    ),
-                    MenuItem(
-                      text: "회원 탈퇴",
-                      onTap: () {
-                        showDeleteAccountDialog(context);
-                      },
-                    ),
-                    MenuItem(
-                      text: "로그아웃",
-                      onTap: () {
-                        showSignOutDialog(context);
-                      },
-                    ),
-                  ],
-                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // '나의 메뉴' 텍스트
+                      Text(
+                        "나의 메뉴",
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 10),
+                      // 메뉴 버튼들
+                      MenuItem(
+                        text: "월 예산 설정",
+                        onTap: () {
+                          showBudgetDialog(context);
+                        },
+                      ),
+                      MenuItem(
+                        text: "계정 설정",
+                        onTap: () {
+                          showAccountSettingsDialog(context);
+                        },
+                      ),
+                      MenuItem(
+                        text: "회원 탈퇴",
+                        onTap: () {
+                          showDeleteAccountDialog(context);
+                        },
+                      ),
+                      MenuItem(
+                        text: "로그아웃",
+                        onTap: () {
+                          showSignOutDialog(context);
+                        },
+                      ),
+                    ],
+                  ),
+                )
               ),
             ),
           ),
