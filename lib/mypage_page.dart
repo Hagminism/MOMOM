@@ -15,115 +15,115 @@ class MyPageScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         title: Text("마이페이지", style: TextStyle(color: Colors.black)),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            SizedBox(height: 20),
-      // 프로필 사진, 이름, 이메일 부분
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(auth.currentUser?.uid)
-                    .get(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  }
-                  if (!snapshot.hasData || snapshot.data?.data() == null) {
-                    return Text("사용자 정보를 불러오는 데 실패했습니다.");
-                  }
-                  var userData = snapshot.data!.data() as Map<String, dynamic>;
-                  return Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.grey[200], // 기본 배경색
-                        child: Icon(
-                          Icons.person, // 기본 아이콘
-                          size: 40,
-                          color: Colors.grey, // 아이콘 색상
-                        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          SizedBox(height: 20),
+          // 프로필 사진, 이름, 이메일 부분
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(auth.currentUser?.uid)
+                  .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+                if (!snapshot.hasData || snapshot.data?.data() == null) {
+                  return Text("사용자 정보를 불러오는 데 실패했습니다.");
+                }
+                var userData = snapshot.data!.data() as Map<String, dynamic>;
+                return Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.grey[200], // 기본 배경색
+                      child: Icon(
+                        Icons.person, // 기본 아이콘
+                        size: 40,
+                        color: Colors.grey, // 아이콘 색상
                       ),
-                      SizedBox(height: 10),
-                      Text(
-                        "${userData['username']} 님",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        userData['email'],
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "${userData['username']} 님",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      userData['email'],
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                );
+              },
             ),
-            Expanded(
-              child: Center(
-                child: Container(
-                  height: 450,
-                  padding: EdgeInsets.all(35),
-                  margin: EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 15,
-                        spreadRadius: 3,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                // '나의 메뉴' 텍스트
-                      Text(
-                        "나의 메뉴",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10),
-                      // 메뉴 버튼들
-                      MenuItem(
-                        text: "월 예산 설정",
-                        onTap: () {
-                          showBudgetDialog(context);
-                        },
-                      ),
-                      MenuItem(
-                        text: "계정 설정",
-                        onTap: () {
-                          showAccountSettingsDialog(context);
-                        },
-                      ),
-                      MenuItem(
-                        text: "회원 탈퇴",
-                        onTap: () {
-                          showDeleteAccountDialog(context);
-                        },
-                      ),
-                      MenuItem(
-                        text: "로그아웃",
-                        onTap: () {
-                          showSignOutDialog(context);
-                        },
-                      ),
-                    ],
-                  ),
+          ),
+          Expanded(
+            child: Center(
+              child: Container(
+                height: 450,
+                padding: EdgeInsets.all(35),
+                margin: EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 15,
+                      spreadRadius: 3,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // '나의 메뉴' 텍스트
+                    Text(
+                      "나의 메뉴",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    // 메뉴 버튼들
+                    MenuItem(
+                      text: "월 예산 설정",
+                      onTap: () {
+                        showBudgetDialog(context);
+                      },
+                    ),
+                    MenuItem(
+                      text: "계정 설정",
+                      onTap: () {
+                        showAccountSettingsDialog(context);
+                      },
+                    ),
+                    MenuItem(
+                      text: "회원 탈퇴",
+                      onTap: () {
+                        showDeleteAccountDialog(context);
+                      },
+                    ),
+                    MenuItem(
+                      text: "로그아웃",
+                      onTap: () {
+                        showSignOutDialog(context);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    }
+    );
+  }
 }
+
 
 class MenuItem extends StatelessWidget {
   final String text;
