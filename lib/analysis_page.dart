@@ -356,12 +356,12 @@ class ChartWidget extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: false,
-            colors: const [Colors.red],
+            // colors: const [Colors.red],
             barWidth: 4,
             dotData: FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              colors: [Colors.red.withOpacity(0.3)],
+              // colors: [Colors.red.withOpacity(0.3)],
             ),
           ),
         ],
@@ -391,12 +391,12 @@ class ChartWidget extends StatelessWidget {
         BarChartGroupData(
           x: i,
           barRods: [
-            BarChartRodData(
-              y: currentData[i],
-              width: 12,
-              colors: const [Colors.blue],
-              borderRadius: BorderRadius.circular(4),
-            ),
+            // BarChartRodData(
+            //   y: currentData[i],
+            //   width: 12,
+            //   colors: const [Colors.blue],
+            //   borderRadius: BorderRadius.circular(4),
+            // ),
           ],
         ),
       );
@@ -426,17 +426,17 @@ class ChartWidget extends StatelessWidget {
     final labels = chartData.labels[tabIndex];
 
     return FlTitlesData(
-      leftTitles: SideTitles(
-        showTitles: true,
-        getTitles: (value) => '${value ~/ 10000}만원',
-        reservedSize: 48,
-        interval: 50000,
-      ),
-      bottomTitles: SideTitles(
-        showTitles: true,
-        getTitles: (value) => labels[value.toInt()],
-        reservedSize: 32,
-      ),
+      // leftTitles: SideTitles(
+      //   showTitles: true,
+      //   getTitles: (value) => '${value ~/ 10000}만원',
+      //   reservedSize: 48,
+      //   interval: 50000,
+      // ),
+      // bottomTitles: SideTitles(
+      //   showTitles: true,
+      //   getTitles: (value) => labels[value.toInt()],
+      //   reservedSize: 32,
+      // ),
     );
   }
 
