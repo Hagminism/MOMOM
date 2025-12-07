@@ -8,6 +8,8 @@ import 'login_page.dart';
 final FirebaseAuth auth = FirebaseAuth.instance;
 
 class MyPageScreen extends StatelessWidget {
+  const MyPageScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

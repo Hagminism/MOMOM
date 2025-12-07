@@ -8,7 +8,7 @@ class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key, required this.userId});
 
   @override
-  _CategoryPageState createState() => _CategoryPageState();
+  State<CategoryPage> createState() => _CategoryPageState();
 }
 
 class _CategoryPageState extends State<CategoryPage> {
@@ -202,14 +202,14 @@ class _CategoryPageState extends State<CategoryPage> {
                                     children: [
                                       Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.2),
+                                          color: Colors.blue.withValues(alpha: 0.2),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Icon(
                                             CategoryType.values.firstWhere((e) => e.categoryName == category).icon,
-                                            color: Colors.blue.withOpacity(0.6),
+                                            color: Colors.blue.withValues(alpha: 0.6),
                                           ),
                                         ),
                                       ),

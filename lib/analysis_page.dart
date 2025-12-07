@@ -6,12 +6,12 @@ class AnalysisPage extends StatefulWidget {
   final String userId;
 
   const AnalysisPage({
-    Key? key,
+    super.key,
     required this.userId,
-  }) : super(key: key);
+  });
 
   @override
-  _AnalysisPageState createState() => _AnalysisPageState();
+  State<AnalysisPage> createState() => _AnalysisPageState();
 }
 
 class _AnalysisPageState extends State<AnalysisPage> {

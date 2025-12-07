@@ -9,11 +9,11 @@ class CategoryDetailPage extends StatefulWidget {
   final String selectedMonth; // 선택된 월
 
   const CategoryDetailPage({
-    Key? key,
+    super.key,
     required this.categoryType,
     required this.userId,
     required this.selectedMonth,
-  }) : super(key: key);
+  });
 
   @override
   State<CategoryDetailPage> createState() => _CategoryDetailPageState();
@@ -144,7 +144,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     ),
                     child: Icon(
                       category.icon, // 카테고리 타입의 아이콘 사용
-                      color: Colors.blue.withOpacity(0.6),
+                      color: Colors.blue.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
